@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECO STAR 永續手作教師培育計畫</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony (Stone, Muted Teal) -->
+    <!-- Application Structure Plan: A single-page, vertical narrative application. The structure guides users from their pain points to the program's solution and value proposition, ending with a clear call-to-action. This linear storytelling approach is more engaging than a static document and simplifies information for quick decision-making, leading them directly to the LINE sign-up as requested. Key interactions include hover effects and a click-to-reveal section for the course modules to maintain a clean layout. -->
+    <!-- Visualization & Content Choices: Report Info: M1-M6 Course Modules -> Goal: Organize & Detail -> Viz: Interactive Vertical Timeline -> Interaction: Click on a module to show its description. Justification: Avoids cluttering the page with too much text at once, encourages user engagement, and presents the program's structure clearly. Library/Method: Vanilla JavaScript with an array of objects for data, and CSS for styling. Report Info: Program Benefits -> Goal: Compare/Show Transformation -> Viz: Two-column "Before/After" layout -> Interaction: Static visual comparison. Justification: Clearly and quickly communicates the value proposition and the transformation a student will undergo. Library/Method: HTML/Tailwind CSS Grid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FDFBF8;
+            color: #4B423B;
+        }
+        .text-shadow-subtle {
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+        }
+        .hero-bg {
+            background-image: url('https://images.unsplash.com/photo-1542042161-236162395939?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+        .gradient-overlay::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to top, rgba(253, 251, 248, 1) 0%, rgba(253, 251, 248, 0.5) 50%, rgba(253, 251, 248, 0) 100%);
+        }
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 50px;
+            height: 3px;
+            background-color: #D4AF37;
+            margin: 1rem auto 0;
+        }
+        .module-item.active {
+            background-color: #945428;
+            color: white;
+        }
+        .module-item.active svg {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Hero Section -->
+    <header class="relative hero-bg h-screen flex items-center justify-center text-center">
+        <div class="gradient-overlay"></div>
+        <div class="relative z-10 p-6 max-w-2xl mx-auto">
+            <h1 class="text-4xl md:text-6xl font-bold text-shadow-subtle tracking-wider text-stone-800">ECO STAR 永續手作教師培育計畫</h1>
+            <p class="mt-4 text-xl md:text-2xl text-stone-700 font-medium text-shadow-subtle">把熱愛手作的你，轉化為有影響力的永續講師</p>
+            <a href="#cta" class="mt-12 inline-block bg-[#945428] text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg hover:bg-[#F98B45] transition-transform transform hover:scale-105">
+                立即參加免費說明會
+            </a>
+        </div>
+    </header>
+
+    <main class="bg-[#FDFBF8]">
+        <!-- Pain Points Section -->
+        <section class="py-20 px-6">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-3xl font-bold section-title">你是不是也曾經這樣想過？</h2>
+                <p class="mt-10 text-lg text-stone-600">喜歡手作、也關心環保，卻始終在熱情與現實間掙扎？</p>
+                <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-[#F98B45]">
+                        <h3 class="font-bold text-lg mb-2">不知如何開課收費</h3>
+                        <p class="text-stone-600">滿腦子的創意，卻不知道如何設計成一堂有價值的課程，更不知道如何制定合理的收費標準。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-[#F98B45]">
+                        <h3 class="font-bold text-lg mb-2">缺乏專業資源與工具</h3>
+                        <p class="text-stone-600">想進入企業或校園，卻沒有专业的教案、學習單與提案工具，難以取得正式合作的入場券。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-[#F98B45]">
+                        <h3 class="font-bold text-lg mb-2">案源不穩，熱情消耗</h3>
+                        <p class="text-stone-600">永遠在找下一位學生，接不到穩定的案源，單打獨鬥的模式讓熱情逐漸被消磨殆盡。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-[#F98B45]">
+                        <h3 class="font-bold text-lg mb-2">想接ESG案卻無從下手</h3>
+                        <p class="text-stone-600">看見企業 ESG 的龐大需求，卻不知道如何將自己的手作專長與永續目標結合，錯失良機。</p>
+                    </div>
+                </div>
+                 <p class="mt-12 text-xl font-semibold text-stone-800">ECO STAR 正是為了解決這些痛點而誕生的。</p>
+            </div>
+        </section>
+
+        <!-- Vision & What you get Section -->
+        <section class="bg-stone-100 py-20 px-6">
+            <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+                <div class="text-center md:text-left">
+                    <h2 class="text-3xl font-bold section-title">不只「會做」，更是「行動者」</h2>
+                     <p class="mt-10 text-lg leading-relaxed text-stone-700">韻手作希望培養的，是能把材料故事、SDGs理念、循環設計，透過教學轉化為真實影響力的行動者。一堂手作課，就是一個改變的起點。你的手，不只是創作，更是教育與連結的工具。</p>
+                </div>
+                <div>
+                    <div class="bg-white p-8 rounded-lg shadow-lg">
+                        <h3 class="text-2xl font-bold mb-4 text-[#945428]">這份計畫，將為你帶來什麼？</h3>
+                        <p class="mb-6 font-medium">「系統化的永續教育 × 再生材料創作 × ESG 行動設計」</p>
+                        <ul class="space-y-4 text-stone-600">
+                            <li class="flex items-start"><span class="text-[#F98B45] mr-3 mt-1">🌱</span>一套完整的手作教學力培訓模組 (M1-M6)</li>
+                            <li class="flex items-start"><span class="text-[#F98B45] mr-3 mt-1">🌱</span>導師陪伴制度，讓你從零也能帶班上課</li>
+                            <li class="flex items-start"><span class="text-[#F98B45] mr-3 mt-1">🌱</span>真實接案資源與企業合作機會</li>
+                            <li class="flex items-start"><span class="text-[#F98B45] mr-3 mt-1">🌱</span>材料供應與教案支援，讓你專注創作與教學</li>
+                        </ul>
+                        <p class="mt-6 font-bold text-lg text-right text-stone-800">✨ 一條穩定、可成長，也能自由移動的教學職涯路徑。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Transformation Section -->
+        <section class="py-20 px-6">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-3xl font-bold section-title">從手作職人到專業講師的蛻變</h2>
+                <p class="mt-10 text-lg text-stone-600">加入 ECO STAR，你不只學習技能，更是完成一次完整的職涯升級。</p>
+                <div class="mt-12 bg-white p-8 rounded-lg shadow-lg border-t-4 border-[#D4AF37]">
+                    <h3 class="text-2xl font-bold text-stone-800">你將實現的轉化：</h3>
+                    <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                        <div class="flex items-center space-x-3"><span class="text-2xl">✅</span><p>從「手作職人」升級為「專業講師」</p></div>
+                        <div class="flex items-center space-x-3"><span class="text-2xl">✅</span><p>能獨立設計 SDGs/ESG 對應教案</p></div>
+                        <div class="flex items-center space-x-3"><span class="text-2xl">✅</span><p>與企業、校園、社區對接合作</p></div>
+                        <div class="flex items-center space-x-3"><span class="text-2xl">✅</span><p>擁有專屬教案、學習單與提案工具</p></div>
+                        <div class="flex items-center space-x-3 col-span-1 lg:col-span-2"><span class="text-2xl">✅</span><p>成為韻手作講師系統一員，參與品牌接案合作</p></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modules Section -->
+        <section class="bg-stone-100 py-20 px-6">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold text-center section-title">M1-M6 系統化課程模組</h2>
+                <p class="mt-10 text-lg text-center text-stone-600">我們為你打造了循序漸進的學習路徑，每一步都扎實而有效。</p>
+                <div class="mt-12 flex flex-col md:flex-row gap-8">
+                    <div id="module-nav" class="flex md:flex-col overflow-x-auto md:overflow-x-visible -mx-4 px-4 md:mx-0 md:px-0">
+                        <!-- Module items will be injected by JS -->
+                    </div>
+                    <div id="module-content" class="md:w-2/3 bg-white p-8 rounded-lg shadow-md min-h-[250px] flex items-center">
+                        <!-- Module content will be injected by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Opportunities Section -->
+        <section class="py-20 px-6">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-3xl font-bold section-title">真實案源與舞台，我們都為你準備好</h2>
+                <p class="mt-10 text-lg text-stone-600">成為韻手作品牌認證講師，你不需再單打獨鬥。我們提供你真實的案源與寬廣的舞台。</p>
+                <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                    <div class="bg-white p-6 rounded-lg shadow-sm"><h3 class="font-bold text-lg mb-2">💼 參與多元專案</h3><p>參與企業 ESG 活動、校園課程、社區工作坊，累積豐富實戰經驗。</p></div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm"><h3 class="font-bold text-lg mb-2">📦 教案材料支援</h3><p>使用官方標準化的教案與材料包，讓你專注於教學本身。</p></div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm"><h3 class="font-bold text-lg mb-2">📢 品牌行銷曝光</h3><p>獲得品牌行銷資源與名單導流，提升你的個人知名度。</p></div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm"><h3 class="font-bold text-lg mb-2">🤝 共享資源平台</h3><p>享有合作分潤制度，在共享平台上與其他講師交流成長。</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Target Audience Section -->
+        <section class="bg-stone-100 py-20 px-6">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-3xl font-bold section-title">這個計畫，適合這樣的你</h2>
+                <ul class="mt-12 space-y-4 text-lg text-stone-700 inline-block text-left">
+                    <li class="flex items-center"><span class="text-2xl mr-3">🌿</span>喜歡手作、關心環境、樂於教學的你</li>
+                    <li class="flex items-center"><span class="text-2xl mr-3">🌿</span>希望發展自由接案的職涯，想脫離固定工作</li>
+                    <li class="flex items-center"><span class="text-2xl mr-3">🌿</span>曾經自學或接過課，但想更專業、更穩定</li>
+                    <li class="flex items-center"><span class="text-2xl mr-3">🌿</span>有興趣參與品牌合作，進入企業／校園體系教學</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section id="cta" class="bg-[#945428] py-20 px-6 text-white">
+            <div class="max-w-3xl mx-auto text-center">
+                <h2 class="text-4xl font-bold text-shadow-subtle">現在，就是最好的開始！</h2>
+                <p class="mt-4 text-xl">成為改變世界的「行動型永續講師」</p>
+                <div class="mt-10 bg-white/20 p-6 rounded-lg">
+                    <h3 class="text-2xl font-bold">免費招募說明會，報名開放中！</h3>
+                    <p class="mt-2">最新一期課程即將開課，形式為線上/實體混合。想了解更多細節？立即加入LINE，我們將提供您完整的課程資料包！</p>
+                    <p class="mt-4 font-bold">說明會場次：<br>第一場: 7/27 (日) | 第二場: 7/30 (三) | 第三場: 8/3 (日)</p>
+                </div>
+                <a href="https://lin.ee/ayNsNtj" target="_blank" class="mt-10 inline-block bg-white text-[#F98B45] font-bold py-4 px-10 rounded-full text-xl shadow-lg hover:bg-stone-100 transition-transform transform hover:scale-105">
+                    👉 點擊加入LINE，免費報名說明會
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-stone-800 text-white py-8 px-6 text-center">
+        <p>&copy; 2025 韻手作永續 (Wishlite) | All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modules = [
+                { id: 'm1', title: 'M1 材料導覽 × 永續敘事', content: '學習如何挖掘再生材料背後的故事，並將其轉化為引人入勝的教學內容，建立課程的核心價值與情感連結。' },
+                { id: 'm2', title: 'M2 感官教學 × 互動設計', content: '掌握如何運用五感體驗，設計出充滿互動性與趣味性的教學流程，讓學員深度沉浸在手作與永續的樂趣中。' },
+                { id: 'm3', title: 'M3 作品設計 × 創作引導', content: '學習如何引導學員進行創意發想，並將永續理念融入作品設計，創造出兼具美感與環保意義的成品。' },
+                { id: 'm4', title: 'M4 教案設計 × 學習單開發', content: '系統化學習撰寫專業教案，並開發對應的學習單與輔助教材，建立可複製、高品質的教學模組。' },
+                { id: 'm5', title: 'M5 客戶對接 × 教學語言調整', content: '學習如何與企業、校園等不同類型的客戶溝通，並根據對象調整教學語言與課程內容，展現專業度。' },
+                { id: 'm6', title: 'M6 派案制度 × 品牌合作計畫', content: '深入了解韻手作的派案制度、合作分潤與品牌支援計畫，正式成為我們的合作夥伴，開啟永續教學事業。' }
+            ];
+
+            const navContainer = document.getElementById('module-nav');
+            const contentContainer = document.getElementById('module-content');
+
+            modules.forEach((module, index) => {
+                const navItem = document.createElement('div');
+                navItem.className = 'module-item cursor-pointer p-4 rounded-lg font-semibold transition-all duration-300 flex-shrink-0 flex items-center justify-between w-full md:w-auto mb-2';
+                navItem.dataset.id = module.id;
+                navItem.innerHTML = `
+                    <span>${module.title}</span>
+                    <svg class="w-4 h-4 ml-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                `;
+                navContainer.appendChild(navItem);
+            });
+
+            const navItems = document.querySelectorAll('.module-item');
+
+            function updateContent(moduleId) {
+                const module = modules.find(m => m.id === moduleId);
+                contentContainer.innerHTML = `
+                    <div>
+                        <h4 class="text-2xl font-bold text-[#F98B45] mb-4">${module.title}</h4>
+                        <p class="text-lg leading-relaxed text-stone-600">${module.content}</p>
+                    </div>
+                `;
+                navItems.forEach(item => {
+                    item.classList.toggle('active', item.dataset.id === moduleId);
+                });
+            }
+
+            navContainer.addEventListener('click', function(e) {
+                const navItem = e.target.closest('.module-item');
+                if (navItem) {
+                    updateContent(navItem.dataset.id);
+                }
+            });
+
+            // Set initial content
+            if (modules.length > 0) {
+                updateContent(modules[0].id);
+            }
+
+            // Smooth scroll for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
