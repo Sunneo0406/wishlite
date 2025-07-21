@@ -219,6 +219,20 @@
         </section>
 
         <section id="cta" class="py-20 px-6 text-black bg-contain bg-no-repeat bg-center" style="background-image: url('img/back1.png');">
+
+
+<style>
+        @media (max-width: 767px) { /* Tailwind 的 md 斷點通常是 768px，所以 max-width: 767px 指的是手機 */
+            #cta {
+                background-position: center 60% !important; /* 嘗試調整這個百分比，例如 50% (預設居中), 60%, 70% 等，直到滿意 */
+                /* 或者嘗試更具體的定位，例如 center bottom */
+                /* background-position: center bottom !important; */
+            }
+        }
+    </style>
+
+
+
             <div class="max-w-3xl mx-auto text-center">
                 <h2 class="text-4xl font-bold text-shadow-subtle  text-[#945428]">現在，就是最好的開始！</h2>
                 <p class="mt-4 text-xl  text-[#945428]">成為改變世界的「行動型永續講師」</p>
