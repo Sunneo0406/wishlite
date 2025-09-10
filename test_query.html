@@ -76,17 +76,6 @@
     <div class="container">
         <h1>電錶數據查詢</h1>
 
-        <div class="summary-display">
-            <div id="totalKwhCircle" class="circle">
-                <h3>總耗能 (kWh)</h3>
-                <span class="value">...</span>
-            </div>
-            <div id="totalCo2Circle" class="circle">
-                <h3>總碳排 (kg)</h3>
-                <span class="value">...</span>
-            </div>
-        </div>
-
         <div class="input-group">
             <label for="tableName">選擇表格:</label>
             <select id="tableName">
@@ -97,6 +86,7 @@
                 <option value="空壓機">空壓機</option>
                 <option value="破碎機(220V)">破碎機(220V)</option>
                 <option value="雕刻機">雕刻機</option>
+                <option value="攪拌機A">攪拌機A</option>
             </select>
         </div>
 
@@ -104,7 +94,7 @@
             <h2>班次查詢</h2>
             <button onclick="fetchShiftData('day_shift')">前日早班 (08:00 - 17:00)</button>
             <button onclick="fetchShiftData('night_shift')">前日夜班 (19:00 - 05:00)</button>
-            <button onclick="fetchShiftData('current_day')">今日至今 (08:00 - 現在)</button>
+            <button onclick="fetchShiftData('since_morning')">今日至今 (08:00 - 現在)</button>
         </div>
 
         <hr>
@@ -130,6 +120,8 @@
     <script>
         const cloudRunUrl = 'https://jlm-co2e-db-connect-221081318298.asia-east1.run.app';
 
+        // 以下函式已註解，以停止總耗能的自動載入
+        /*
         async function fetchTotalDataAndDisplay() {
             const totalKwhCircle = document.querySelector('#totalKwhCircle .value');
             const totalCo2Circle = document.querySelector('#totalCo2Circle .value');
@@ -138,12 +130,12 @@
             totalCo2Circle.innerText = '載入中...';
 
             try {
-                const response = await fetch(`${cloudRunUrl}/total_latest_kwh`);
+                const response = await fetch(`${cloudRunUrl}/api/get_total_latest_kwh`);
                 const result = await response.json();
                 
                 if (response.ok) {
-                    const totalKwh = result.total_kilo_watt_hours;
-                    const co2e = totalKwh * 0.495;
+                    const totalKwh = result.total_kwh;
+                    const co2e = totalKwh * 0.495; 
                     
                     totalKwhCircle.innerText = `${totalKwh.toFixed(2)}`;
                     totalCo2Circle.innerText = `${co2e.toFixed(2)}`;
@@ -158,8 +150,8 @@
                 console.error('連線錯誤:', error);
             }
         }
-
         document.addEventListener('DOMContentLoaded', fetchTotalDataAndDisplay);
+        */
 
         async function fetchData(endpoint, shiftType, params = {}) {
             const tableName = document.getElementById('tableName').value;
@@ -169,7 +161,7 @@
             responseDisplay.innerText = '正在查詢...';
             co2Display.style.display = 'none';
 
-            let fullUrl = `${cloudRunUrl}${endpoint}/${tableName}`;
+            let fullUrl = `${cloudRunUrl}/api/get_watt_hours/${endpoint}/${tableName}`;
             
             if (Object.keys(params).length > 0) {
                 const queryString = new URLSearchParams(params).toString();
@@ -193,12 +185,12 @@
                         case 'night_shift':
                             title = '夜班查詢結果：';
                             break;
-                        case 'current_day':
-                            title = '上午至今查詢結果：';
+                        case 'since_morning':
+                            title = '今日至今查詢結果：';
                             break;
                         default:
-                            if (params.start && params.end) {
-                                title = `查詢結果 (${params.start.replace('T', ' ')} 至 ${params.end.replace('T', ' ')}):`;
+                            if (params.start_iso && params.end_iso) {
+                                title = `查詢結果 (${params.start_iso.replace('T', ' ')} 至 ${params.end_iso.replace('T', ' ')}):`;
                             }
                             break;
                     }
@@ -222,7 +214,7 @@
         }
 
         function fetchShiftData(shiftType) {
-            fetchData(`/shift/${shiftType}`, shiftType);
+            fetchData(shiftType, shiftType);
         }
 
         function fetchCustomPeriodData() {
@@ -237,9 +229,8 @@
             const startISO = new Date(startTime).toISOString().slice(0, 19);
             const endISO = new Date(endTime).toISOString().slice(0, 19);
 
-            fetchData('/period', 'custom', { start: startISO, end: endISO });
+            fetchData('custom', 'custom', { start_iso: startISO, end_iso: endISO });
         }
     </script>
-
 </body>
 </html>
