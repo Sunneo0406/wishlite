@@ -29,7 +29,18 @@
             transition: background-color 0.3s ease;
         }
         button:hover { background-color: #0056b3; }
-        .button-group button { margin-right: 10px; }
+        
+        /* 響應式按鈕群組 */
+        .button-group { 
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .button-group button {
+            flex: 1 1 auto; /* 讓按鈕自動填滿空間並換行 */
+            min-width: 150px;
+        }
+
         .result-box {
             padding: 15px;
             background-color: #e9ecef;
@@ -46,6 +57,7 @@
             margin: 20px 0;
             gap: 30px;
             text-align: center;
+            flex-wrap: wrap; /* 確保在小螢幕上換行 */
         }
         .circle {
             width: 150px;
@@ -69,6 +81,16 @@
             font-weight: bold;
             color: #333;
         }
+
+        /* 手機版面的額外調整 */
+        @media (max-width: 500px) {
+            body { margin: 10px; }
+            .container { padding: 20px; }
+            .button-group button {
+                width: 100%;
+                min-width: unset;
+            }
+        }
     </style>
 </head>
 <body>
@@ -90,8 +112,8 @@
             </select>
         </div>
 
+        <h2>班次查詢</h2>
         <div class="button-group">
-            <h2>班次查詢</h2>
             <button onclick="fetchShiftData('day_shift')">前日早班 (08:00 - 17:00)</button>
             <button onclick="fetchShiftData('night_shift')">前日夜班 (19:00 - 05:00)</button>
             <button onclick="fetchShiftData('since_morning')">今日至今 (08:00 - 現在)</button>
@@ -119,39 +141,6 @@
 
     <script>
         const cloudRunUrl = 'https://jlm-co2e-db-connect-221081318298.asia-east1.run.app';
-
-        // 以下函式已註解，以停止總耗能的自動載入
-        /*
-        async function fetchTotalDataAndDisplay() {
-            const totalKwhCircle = document.querySelector('#totalKwhCircle .value');
-            const totalCo2Circle = document.querySelector('#totalCo2Circle .value');
-            
-            totalKwhCircle.innerText = '載入中...';
-            totalCo2Circle.innerText = '載入中...';
-
-            try {
-                const response = await fetch(`${cloudRunUrl}/api/get_total_latest_kwh`);
-                const result = await response.json();
-                
-                if (response.ok) {
-                    const totalKwh = result.total_kwh;
-                    const co2e = totalKwh * 0.495; 
-                    
-                    totalKwhCircle.innerText = `${totalKwh.toFixed(2)}`;
-                    totalCo2Circle.innerText = `${co2e.toFixed(2)}`;
-                } else {
-                    totalKwhCircle.innerText = '錯誤';
-                    totalCo2Circle.innerText = '錯誤';
-                    console.error('API 錯誤:', result);
-                }
-            } catch (error) {
-                totalKwhCircle.innerText = '連線錯誤';
-                totalCo2Circle.innerText = '連線錯誤';
-                console.error('連線錯誤:', error);
-            }
-        }
-        document.addEventListener('DOMContentLoaded', fetchTotalDataAndDisplay);
-        */
 
         async function fetchData(endpoint, shiftType, params = {}) {
             const tableName = document.getElementById('tableName').value;
