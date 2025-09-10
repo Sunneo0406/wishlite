@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電錶數據查詢測試</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f0f2f5; color: #333; }
+        .container { max-width: 700px; margin: auto; padding: 30px; background-color: #fff; border-radius: 12px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        h1, h2 { color: #0056b3; }
+        .input-group, .button-group { margin-bottom: 20px; }
+        label, .result-label { font-weight: bold; margin-bottom: 8px; display: block; }
+        input[type="text"], input[type="datetime-local"], select {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover { background-color: #0056b3; }
+        .button-group button { margin-right: 10px; }
+        .result-box {
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            font-size: 18px;
+            word-wrap: break-word;
+            margin-bottom: 10px;
+        }
+        .summary-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            gap: 30px;
+            text-align: center;
+        }
+        .circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background-color: #d1e7ff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 5px solid #007BFF;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .circle h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #0056b3;
+        }
+        .circle .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>電錶數據查詢</h1>
+
+        <div class="summary-display">
+            <div id="totalKwhCircle" class="circle">
+                <h3>總耗能 (kWh)</h3>
+                <span class="value">...</span>
+            </div>
+            <div id="totalCo2Circle" class="circle">
+                <h3>總碳排 (kg)</h3>
+                <span class="value">...</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="tableName">選擇表格:</label>
+            <select id="tableName">
+                <option value="120型">120型</option>
+                <option value="sensor_data1">sensor_data1</option>
+                <option value="sensor_data2">sensor_data2</option>
+                <option value="冰水機">冰水機</option>
+                <option value="空壓機">空壓機</option>
+                <option value="破碎機(220V)">破碎機(220V)</option>
+                <option value="雕刻機">雕刻機</option>
+            </select>
+        </div>
+
+        <div class="button-group">
+            <h2>班次查詢</h2>
+            <button onclick="fetchShiftData('day_shift')">前日早班 (08:00 - 17:00)</button>
+            <button onclick="fetchShiftData('night_shift')">前日夜班 (19:00 - 05:00)</button>
+            <button onclick="fetchShiftData('current_day')">今日至今 (08:00 - 現在)</button>
+        </div>
+
+        <hr>
+
+        <div class="input-group">
+            <h2>自訂時間區段查詢</h2>
+            <label for="startTime">起始時間:</label>
+            <input type="datetime-local" id="startTime">
+
+            <label for="endTime">結束時間:</label>
+            <input type="datetime-local" id="endTime">
+
+            <button onclick="fetchCustomPeriodData()">查詢</button>
+        </div>
+
+        <div class="input-group">
+            <h2 class="result-label">查詢結果 (千瓦小時):</h2>
+            <div id="response-display" class="result-box">請點擊按鈕或輸入時間查詢...</div>
+            <div id="co2-display" class="result-box" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const cloudRunUrl = 'https://jlm-co2e-db-connect-221081318298.asia-east1.run.app';
+
+        async function fetchTotalDataAndDisplay() {
+            const totalKwhCircle = document.querySelector('#totalKwhCircle .value');
+            const totalCo2Circle = document.querySelector('#totalCo2Circle .value');
+            
+            totalKwhCircle.innerText = '載入中...';
+            totalCo2Circle.innerText = '載入中...';
+
+            try {
+                const response = await fetch(`${cloudRunUrl}/total_latest_kwh`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    const totalKwh = result.total_kilo_watt_hours;
+                    const co2e = totalKwh * 0.495;
+                    
+                    totalKwhCircle.innerText = `${totalKwh.toFixed(2)}`;
+                    totalCo2Circle.innerText = `${co2e.toFixed(2)}`;
+                } else {
+                    totalKwhCircle.innerText = '錯誤';
+                    totalCo2Circle.innerText = '錯誤';
+                    console.error('API 錯誤:', result);
+                }
+            } catch (error) {
+                totalKwhCircle.innerText = '連線錯誤';
+                totalCo2Circle.innerText = '連線錯誤';
+                console.error('連線錯誤:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchTotalDataAndDisplay);
+
+        async function fetchData(endpoint, shiftType, params = {}) {
+            const tableName = document.getElementById('tableName').value;
+            const responseDisplay = document.getElementById('response-display');
+            const co2Display = document.getElementById('co2-display');
+
+            responseDisplay.innerText = '正在查詢...';
+            co2Display.style.display = 'none';
+
+            let fullUrl = `${cloudRunUrl}${endpoint}/${tableName}`;
+            
+            if (Object.keys(params).length > 0) {
+                const queryString = new URLSearchParams(params).toString();
+                fullUrl += `?${queryString}`;
+            }
+
+            try {
+                const response = await fetch(fullUrl, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    let title = '';
+                    switch (shiftType) {
+                        case 'day_shift':
+                            title = '早班查詢結果：';
+                            break;
+                        case 'night_shift':
+                            title = '夜班查詢結果：';
+                            break;
+                        case 'current_day':
+                            title = '上午至今查詢結果：';
+                            break;
+                        default:
+                            if (params.start && params.end) {
+                                title = `查詢結果 (${params.start.replace('T', ' ')} 至 ${params.end.replace('T', ' ')}):`;
+                            }
+                            break;
+                    }
+                    
+                    const kwh = result.kilo_watt_hours;
+                    responseDisplay.innerHTML = `<strong>${title}</strong> ${kwh.toFixed(2)} kWh`;
+                    
+                    const co2e = kwh * 0.495;
+                    co2Display.innerHTML = `本次產生共 ${co2e.toFixed(2)} 公斤碳排`;
+                    co2Display.style.display = 'block';
+
+                    console.log('成功:', result);
+                } else {
+                    responseDisplay.innerHTML = `<strong>錯誤：</strong> ${result.detail || '未知的錯誤'}`;
+                    console.error('API 錯誤:', result);
+                }
+            } catch (error) {
+                responseDisplay.innerHTML = `<strong>連線失敗或錯誤：</strong> ${error.message}`;
+                console.error('連線錯誤:', error);
+            }
+        }
+
+        function fetchShiftData(shiftType) {
+            fetchData(`/shift/${shiftType}`, shiftType);
+        }
+
+        function fetchCustomPeriodData() {
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+
+            if (!startTime || !endTime) {
+                document.getElementById('response-display').innerText = '錯誤：請選擇起始和結束時間。';
+                return;
+            }
+
+            const startISO = new Date(startTime).toISOString().slice(0, 19);
+            const endISO = new Date(endTime).toISOString().slice(0, 19);
+
+            fetchData('/period', 'custom', { start: startISO, end: endISO });
+        }
+    </script>
+
+</body>
+</html>
