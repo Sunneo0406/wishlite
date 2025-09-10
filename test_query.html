@@ -24,7 +24,10 @@
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
     <div class="container mx-auto max-w-4xl bg-white p-8 rounded-2xl shadow-xl space-y-8">
 
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">捷綠盟用電總覽與查詢</h1>
+        <div class="flex items-center justify-center mb-8 p-4 rounded-lg bg-[#F5DEB3] shadow-md"">
+            <img src="img/jlm.png" alt="公司Logo" class="w-12 h-12 mr-4">
+            <h1 class="text-3xl font-bold text-gray-800">捷綠盟用電總覽與查詢</h1>
+        </div>
 
         <div id="dashboard-charts" class="flex flex-col md:flex-row justify-center items-center space-y-8 md:space-y-0 md:space-x-8">
             <div id="kwh-chart" class="w-full md:w-1/2 bg-gray-50 rounded-xl p-4 shadow-inner"></div>
@@ -45,8 +48,8 @@
                         <option value="冰水機">冰水機</option>
                         <option value="空壓機">空壓機</option>
                         <option value="120型">120型</option>
-                        <option value="sensor_data1">sensor_data1</option>
-                        <option value="sensor_data2">sensor_data2</option>
+                        <option value="sensor_data1">第一集電箱</option>
+                        <option value="sensor_data2">第二集電箱</option>
                         <option value="破碎機(220V)">破碎機(220V)</option>
                         <option value="雕刻機">雕刻機</option>
                         <option value="攪拌機A">攪拌機A</option>
@@ -68,8 +71,8 @@
 
         <div class="bg-blue-50 p-6 rounded-2xl shadow-inner border border-blue-200">
             <h2 class="text-xl font-semibold text-blue-700 mb-2">查詢結果:</h2>
-            <div id="response-display" class="text-lg text-gray-800 font-bold">請點擊按鈕進行查詢...</div>
-            <div id="co2e-display" class="text-md text-gray-600 mt-2"></div>
+            <div id="response-display" class="text-2xl text-gray-800 font-bold">請點擊按鈕進行查詢...</div>
+            <div id="co2e-display" class="text-2xl text-gray-600 mt-2"></div>
             <div id="query-time-display" class="text-sm text-gray-500 mt-2"></div>
         </div>
     </div>
@@ -84,7 +87,7 @@
             const kwhOptions = {
                 series: [0],
                 chart: {
-                    height: 280,
+                    height: 350,
                     type: 'radialBar',
                 },
                 plotOptions: {
@@ -96,15 +99,15 @@
                                 offsetY: -15,
                                 show: true,
                                 color: '#888',
-                                fontSize: '16px',
+                                fontSize: '40px',
                                 formatter: () => '總用電量'
                             },
                             value: {
                                 offsetY: 5,
                                 color: '#1f2937',
-                                fontSize: '24px',
+                                fontSize: '30px',
                                 show: true,
-                                formatter: (val) => `${parseFloat(val).toFixed(2)} kWh`
+                                formatter: (val) => [`${parseFloat(val).toFixed(2)}`, `kWh`]
                             }
                         }
                     }
@@ -116,7 +119,7 @@
             const co2eOptions = {
                 series: [0],
                 chart: {
-                    height: 280,
+                    height: 350,
                     type: 'radialBar',
                 },
                 plotOptions: {
@@ -128,15 +131,15 @@
                                 offsetY: -15,
                                 show: true,
                                 color: '#888',
-                                fontSize: '16px',
+                                fontSize: '40px',
                                 formatter: () => '總碳排量'
                             },
                             value: {
                                 offsetY: 5,
                                 color: '#1f2937',
-                                fontSize: '24px',
+                                fontSize: '30px',
                                 show: true,
-                                formatter: (val) => `${parseFloat(val).toFixed(2)} kgCO₂e`
+                                formatter: (val) => [`${parseFloat(val).toFixed(2)}`, `Kg`]
                             }
                         }
                     }
@@ -196,7 +199,7 @@
 
             const url = `${CLOUD_RUN_URL}/api/get_watt_hours/${shiftType}/${tableName}`;
 
-            responseDisplay.innerHTML = `<strong>正在查詢 ${title}...</strong>`;
+            responseDisplay.innerHTML = `<strong>正在查詢 ${tableName} 的 ${title} 資料...</strong>`;
             co2eDisplay.innerHTML = '';
             queryTimeDisplay.innerHTML = '';
 
@@ -209,8 +212,8 @@
                 if (response.ok) {
                     const kwh = result.kilo_watt_hours;
                     const co2e = kwh * TAIPOWER_CO2E_FACTOR;
-                    responseDisplay.innerHTML = `<strong>${title}</strong> 查詢結果: ${kwh.toFixed(2)} kWh`;
-                    co2eDisplay.innerHTML = `本次查詢共產生 ${co2e.toFixed(2)} 公斤碳排`;
+                    responseDisplay.innerHTML = `<strong>${tableName}</strong><br><strong>${title}</strong> 共使用 ${kwh.toFixed(2)} 度電`;
+                    co2eDisplay.innerHTML = `<strong>${title}產生</strong><span style="color: red;font-size: 40px;"> ${co2e.toFixed(2)} </span>公斤碳排`;
                     queryTimeDisplay.innerHTML = `查詢完成，耗時 ${elapsedTime} 毫秒`;
                     console.log('單一電錶查詢成功:', result);
                 } else {
@@ -251,7 +254,7 @@
             // 正確地呼叫後端自訂區間的 API
             const url = `${CLOUD_RUN_URL}/api/get_watt_hours/custom/${tableName}?start_iso=${startISO}&end_iso=${endISO}`;
 
-            responseDisplay.innerHTML = `<strong>正在查詢自訂區間...</strong>`;
+            responseDisplay.innerHTML = `<strong>正在查詢 ${tableName} 的自訂區間資料...</strong>`;
             co2eDisplay.innerHTML = '';
             queryTimeDisplay.innerHTML = '';
 
@@ -264,8 +267,8 @@
                 if (response.ok) {
                     const kwh = result.kilo_watt_hours;
                     const co2e = kwh * TAIPOWER_CO2E_FACTOR;
-                    responseDisplay.innerHTML = `<strong>自訂區間</strong> 查詢結果: ${kwh.toFixed(2)} kWh`;
-                    co2eDisplay.innerHTML = `本次查詢共產生 ${co2e.toFixed(2)} 公斤碳排`;
+                    responseDisplay.innerHTML = `<strong>${tableName}</strong><br><strong>自訂區間</strong> 查詢結果: ${kwh.toFixed(2)} kWh`;
+                    co2eDisplay.innerHTML = `本次查詢共產生 <span style="color: red;font-size: 40px;">${co2e.toFixed(2)}</span> 公斤碳排`;
                     queryTimeDisplay.innerHTML = `查詢完成，耗時 ${elapsedTime} 毫秒`;
                     console.log('自訂區間查詢成功:', result);
                 } else {
