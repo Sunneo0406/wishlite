@@ -42,13 +42,13 @@
 </head>
 <body class="flex items-center justify-center p-2">
 
-    <div id="data-container" class="w-full max-w-4xl p-8 bg-gray-100 rounded-2xl shadow-xl">
+    <div id="data-container" class="w-full max-w-4xl p-8 bg-white rounded-2xl shadow-xl">
         
 
         <!-- 總用電量和總碳排量區塊 -->
         <div id="latest-data-panel" class="flex flex-col md:flex-row items-center justify-around space-y-8 md:space-y-0 md:space-x-8 text-center">
             <!-- 總用電量區塊 -->
-            <div id="kwh-card" class="flex-1 flex flex-col items-center justify-center w-48 h-48 bg-gray-200 rounded-full shadow-lg">
+            <div id="kwh-card" class="flex-1 flex flex-col items-center justify-center w-48 h-48 bg-white rounded-full shadow-lg">
                 <span class="text-xl font-medium text-gray-600">總用電量</span>
                 <div class="mt-2">
                     <span id="kwh-value" class="number-display">0</span>
@@ -57,11 +57,11 @@
             </div>
 
             <!-- 分隔線 -->
-            <div class="hidden md:block w-1 h-24 bg-gray-400 rounded-full"></div>
-            <div class="block md:hidden w-24 h-1 bg-gray-400 rounded-full"></div>
+            <div class="hidden md:block w-1 h-24 bg-gray-200 rounded-full"></div>
+            <div class="block md:hidden w-24 h-1 bg-gray-200 rounded-full"></div>
 
             <!-- 總碳排量區塊 -->
-            <div id="co2e-card" class="flex-1 flex flex-col items-center justify-center w-48 h-48 bg-gray-200 rounded-full shadow-lg">
+            <div id="co2e-card" class="flex-1 flex flex-col items-center justify-center w-48 h-48 bg-white rounded-full shadow-lg">
                 <span class="text-xl font-medium text-gray-600">總碳排量</span>
                 <div class="mt-2">
                     <span id="co2e-value" class="number-display">0</span>
@@ -73,7 +73,7 @@
         <!-- 新增本日用電量和碳排量區塊 -->
         <div id="daily-data-panel" class="flex flex-col md:flex-row items-center justify-around mt-8 space-y-8 md:space-y-0 md:space-x-8 text-center">
             <!-- 本日用電量區塊 -->
-            <div id="daily-kwh-card" class="flex-1 flex flex-col items-center justify-center w-48 h-48 bg-gray-200 rounded-full shadow-lg">
+            <div id="daily-kwh-card" class="flex-1 flex flex-col items-center justify-center w-48 h-48 bg-white rounded-full shadow-lg">
                 <span class="text-xl font-medium text-gray-600">本日用電量</span>
                 <div class="mt-2">
                     <span id="daily-kwh-value" class="number-display">0</span>
@@ -82,11 +82,11 @@
             </div>
 
             <!-- 分隔線 -->
-            <div class="hidden md:block w-1 h-24 bg-gray-400 rounded-full"></div>
-            <div class="block md:hidden w-24 h-1 bg-gray-400 rounded-full"></div>
+            <div class="hidden md:block w-1 h-24 bg-gray-200 rounded-full"></div>
+            <div class="block md:hidden w-24 h-1 bg-gray-200 rounded-full"></div>
 
             <!-- 本日碳排量區塊 -->
-            <div id="daily-co2e-card" class="flex-1 flex flex-col items-center justify-center w-48 h-48 bg-gray-200 rounded-full shadow-lg">
+            <div id="daily-co2e-card" class="flex-1 flex flex-col items-center justify-center w-48 h-48 bg-white rounded-full shadow-lg">
                 <span class="text-xl font-medium text-gray-600">本日碳排量</span>
                 <div class="mt-2">
                     <span id="daily-co2e-value" class="number-display">0</span>
