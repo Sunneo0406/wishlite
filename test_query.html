@@ -191,7 +191,7 @@
                 xaxis: { type: 'datetime' },
                 tooltip: { x: { format: 'yyyy/MM/dd HH:mm:ss' } },
                 title: { // 調整標題樣式以避免重疊
-                    align: 'center',
+                    align: 'left',
                     style: {
                         fontSize: '14px',
                         fontWeight: 'bold',
@@ -206,9 +206,9 @@
             const todayKwhOptions = createRadialChartOptions('今日用電量', '#F59E0B', 'kWh', '今日用電量');
             const todayCo2eOptions = createRadialChartOptions('今日碳排量', '#EF4444', 'Kg', '今日碳排量');
 
-            const pfOptions = { ...commonLineChartOptions, series: [{ name: '功率因數 (PF)', data: [] }], title: { ...commonLineChartOptions.title, text: '功率因數 (PF) 曲線圖' }, colors: ['#FFC107'], yaxis: { min: 0, max: 1 } };
-            const wattOptions = { ...commonLineChartOptions, series: [{ name: '即時瓦特數 (Watt)', data: [] }], title: { ...commonLineChartOptions.title, text: '即時瓦特數 (Watt) 曲線圖' }, colors: ['#E91E63'], yaxis: { min: 0 } };
-            const totalWattHoursOptions = { ...commonLineChartOptions, series: [{ name: '累計瓦特小時 (Wh)', data: [] }], title: { ...commonLineChartOptions.title, text: '累計瓦特小時 (Wh) 曲線圖' }, colors: ['#008FFB'], yaxis: { min: 0 } };
+            const pfOptions = { ...commonLineChartOptions, series: [{ name: '功率因數 (PF)', data: [] }], title: { ...commonLineChartOptions.title, text: '功率因數' }, colors: ['#FFC107'], yaxis: { min: 0, max: 1 } };
+            const wattOptions = { ...commonLineChartOptions, series: [{ name: '即時瓦特數 (Watt)', data: [] }], title: { ...commonLineChartOptions.title, text: '即時功率' }, colors: ['#E91E63'], yaxis: { min: 0 } };
+            const totalWattHoursOptions = { ...commonLineChartOptions, series: [{ name: '累計瓦特小時 (Wh)', data: [] }], title: { ...commonLineChartOptions.title, text: '累計電度' }, colors: ['#008FFB'], yaxis: { min: 0 } };
             
             totalKwhChart = new ApexCharts(document.querySelector("#total-kwh-chart"), totalKwhOptions);
             totalCo2eChart = new ApexCharts(document.querySelector("#total-co2e-chart"), totalCo2eOptions);
