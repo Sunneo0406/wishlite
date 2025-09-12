@@ -114,18 +114,36 @@
             </div>
         </div>
 
-        <!-- 查詢結果顯示區塊 -->
-        <div class="bg-blue-50 p-6 rounded-2xl shadow-inner border border-blue-200">
-            <h2 class="text-xl font-semibold text-blue-700 mb-2">查詢結果:</h2>
-            <div id="response-display" class="text-2xl text-gray-800 font-bold">請點擊按鈕進行查詢...</div>
-            <div id="co2e-display" class="text-2xl text-gray-600 mt-2"></div>
-            <div id="query-time-display" class="text-sm text-gray-500 mt-2"></div>
+        <!-- 查詢結果與匯出區塊並排顯示 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- 查詢結果顯示區塊 -->
+            <div class="bg-blue-50 p-6 rounded-2xl shadow-inner border border-blue-200">
+                <h2 class="text-xl font-semibold text-blue-700 mb-2">查詢結果:</h2>
+                <div id="response-display" class="text-2xl text-gray-800 font-bold">請點擊按鈕進行查詢...</div>
+                <div id="co2e-display" class="text-2xl text-gray-600 mt-2"></div>
+                <div id="query-time-display" class="text-sm text-gray-500 mt-2"></div>
+            </div>
+
+            <!-- 資料匯出區塊 -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-blue-200">
+                <h2 class="text-xl font-semibold text-blue-700 mb-4">資料匯出<span style="font-size: 12px;">(匯出為 Excel 檔案)</span></h2>
+                <div class="space-y-4">
+                    <label for="exportStartTime" class="block text-gray-700 font-medium">開始時間:</label>
+                    <input type="datetime-local" id="exportStartTime" class="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label for="exportEndTime" class="block text-gray-700 font-medium">結束時間:</label>
+                    <input type="datetime-local" id="exportEndTime" class="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button onclick="exportToExcel(this)" class="mt-6 w-full py-3 px-6 text-white font-bold rounded-full transition-colors btn-gradient">匯出為 Excel</button>
+            </div>
         </div>
     </div>
 
     <script>
         const CLOUD_RUN_URL = 'https://jlm-co2e-db-connect-221081318298.asia-east1.run.app';
         const TAIPOWER_CO2E_FACTOR = 0.495;
+        const MILLISECONDS_PER_HOUR = 60 * 60 * 1000;
+        const MAX_HOURS = 24;
+        const MAX_EXPORT_DAYS = 30;
 
         let totalKwhChart, totalCo2eChart, todayKwhChart, todayCo2eChart, pfChart, wattChart, totalWattHoursChart;
 
@@ -331,8 +349,18 @@
                 return;
             }
 
-            const startISO = new Date(startTime).toISOString();
-            const endISO = new Date(endTime).toISOString();
+            const startDate = new Date(startTime);
+            const endDate = new Date(endTime);
+            const timeDifference = endDate.getTime() - startDate.getTime();
+
+            if (timeDifference > MAX_HOURS * MILLISECONDS_PER_HOUR) {
+                responseDisplay.innerHTML = `<strong class="text-red-500">錯誤：時間區間不能超過 ${MAX_HOURS} 小時。</strong>`;
+                co2eDisplay.innerHTML = '';
+                return;
+            }
+
+            const startISO = startDate.toISOString();
+            const endISO = endDate.toISOString();
 
             const chartUrl = `${CLOUD_RUN_URL}/api/get_chart_data?table_name=${tableName}&start_iso=${startISO}&end_iso=${endISO}`;
             const kwhUrl = `${CLOUD_RUN_URL}/api/get_watt_hours/custom/${tableName}?start_iso=${startISO}&end_iso=${endISO}`;
@@ -378,6 +406,87 @@
                 console.error('連線錯誤:', error);
             }
         }
+
+        async function exportToExcel(buttonElement) {
+            setActiveButton(buttonElement);
+            const startTime = document.getElementById('exportStartTime').value;
+            const endTime = document.getElementById('exportEndTime').value;
+            const tableName = document.getElementById('tableName').value;
+            const responseDisplay = document.getElementById('response-display');
+            const co2eDisplay = document.getElementById('co2e-display');
+            const queryTimeDisplay = document.getElementById('query-time-display');
+
+            if (!startTime || !endTime) {
+                responseDisplay.innerHTML = '<strong class="text-red-500">錯誤：請選擇起始和結束時間。</strong>';
+                co2eDisplay.innerHTML = '';
+                return;
+            }
+
+            const startDate = new Date(startTime);
+            const endDate = new Date(endTime);
+            const timeDifference = endDate.getTime() - startDate.getTime();
+
+            if (timeDifference > MAX_EXPORT_DAYS * MILLISECONDS_PER_HOUR * 24) {
+                responseDisplay.innerHTML = `<strong class="text-red-500">錯誤：資料匯出時間區間不能超過 ${MAX_EXPORT_DAYS} 天。</strong>`;
+                co2eDisplay.innerHTML = '';
+                return;
+            }
+
+            responseDisplay.innerHTML = `<strong>正在查詢並匯出 ${tableName} 的資料...</strong>`;
+            co2eDisplay.innerHTML = '';
+            queryTimeDisplay.innerHTML = '';
+
+            const startISO = startDate.toISOString();
+            const endISO = endDate.toISOString();
+            const url = `${CLOUD_RUN_URL}/api/get_chart_data?table_name=${tableName}&start_iso=${startISO}&end_iso=${endISO}`;
+
+            try {
+                const response = await fetch(url);
+                const result = await response.json();
+                const endTimeRequest = new Date();
+                const elapsedTime = endTimeRequest - new Date(startTime);
+
+                if (response.ok) {
+                    const data = result.data;
+                    if (data.length === 0) {
+                        responseDisplay.innerHTML = '<strong>沒有找到符合條件的資料。</strong>';
+                        queryTimeDisplay.innerHTML = `查詢完成，耗時 ${elapsedTime} 毫秒`;
+                        return;
+                    }
+                    
+                    const headers = ["timestamp", "watt", "total_watt_hours", "pf"];
+                    let csv = '\ufeff' + headers.join(',') + '\n';
+                    data.forEach(row => {
+                        const rowData = headers.map(header => row[header]);
+                        csv += rowData.join(',') + '\n';
+                    });
+
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', `${tableName}_${startTime}_to_${endTime}.csv`);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    responseDisplay.innerHTML = `<strong>${tableName}</strong> 的資料已成功匯出。`;
+                    queryTimeDisplay.innerHTML = `匯出完成，耗時 ${elapsedTime} 毫秒`;
+                } else {
+                    responseDisplay.innerHTML = `<strong class="text-red-500">錯誤：</strong> ${result.detail || '未知的錯誤'}`;
+                    queryTimeDisplay.innerHTML = `匯出失敗，耗時 ${elapsedTime} 毫秒`;
+                    console.error('API 錯誤:', result);
+                }
+            } catch (error) {
+                const endTimeRequest = new Date();
+                const elapsedTime = endTimeRequest - new Date(startTime);
+                responseDisplay.innerHTML = `<strong class="text-red-500">連線失敗或錯誤：</strong> ${error.message}`;
+                queryTimeDisplay.innerHTML = `匯出失敗，耗時 ${elapsedTime} 毫秒`;
+                console.error('連線錯誤:', error);
+            }
+        }
+
         
         window.onload = function () {
             initCharts();
