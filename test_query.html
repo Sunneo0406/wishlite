@@ -253,28 +253,68 @@
         }
 
         async function fetchTotalData() {
+            // 1. 在這裡定義您的目標最大值
+            const totalKwhGoal = 200000;  // 假設總用電量的目標是 50,000 kWh
+            const dailyKwhGoal = 500;    // 假設每日用電量的目標是 500 kWh
+
+            // 2. 根據用電量目標和碳排係數，自動換算出碳排的目標最大值
+            const totalCo2eGoal = totalKwhGoal * TAIPOWER_CO2E_FACTOR;
+            const dailyCo2eGoal = dailyKwhGoal * TAIPOWER_CO2E_FACTOR;
+
             try {
                 // 獲取總用電量與碳排量
                 const totalResponse = await fetch(`${CLOUD_RUN_URL}/api/get_total_latest_kwh`);
                 const totalResult = await totalResponse.json();
                 if (totalResponse.ok) {
+                    // --- 處理總用電量 (kWh) ---
                     const totalKwh = totalResult.total_kwh;
+                    const totalPercentage = (totalKwh / totalKwhGoal) * 100;
+                    totalKwhChart.updateSeries([totalPercentage]);
+                    totalKwhChart.updateOptions({
+                        plotOptions: {
+                            radialBar: { dataLabels: { value: { formatter: (val) => `${totalKwh.toFixed(2)} kWh` } } }
+                        }
+                    });
+
+                    // --- 比照辦理：處理總碳排量 (CO2e) ---
                     const totalCo2e = totalKwh * TAIPOWER_CO2E_FACTOR;
-                    totalKwhChart.updateSeries([totalKwh]);
-                    totalCo2eChart.updateSeries([totalCo2e]);
+                    const totalCo2ePercentage = (totalCo2e / totalCo2eGoal) * 100;
+                    totalCo2eChart.updateSeries([totalCo2ePercentage]);
+                    totalCo2eChart.updateOptions({
+                        plotOptions: {
+                            radialBar: { dataLabels: { value: { formatter: (val) => `${totalCo2e.toFixed(2)} Kg` } } }
+                        }
+                    });
+
                     console.log('總數據更新成功:', totalResult);
                 } else {
                     console.error('API 錯誤:', totalResult);
                 }
 
-                // 獲取今日用電量與碳排量 (從早上8點至今)
+                // 獲取今日用電量與碳排量
                 const todayResponse = await fetch(`${CLOUD_RUN_URL}/api/get_total_daily_kwh`);
                 const todayResult = await todayResponse.json();
                 if (todayResponse.ok) {
+                    // --- 處理今日用電量 (kWh) ---
                     const todayKwh = todayResult.total_kwh;
+                    const dailyPercentage = (todayKwh / dailyKwhGoal) * 100;
+                    todayKwhChart.updateSeries([dailyPercentage]);
+                    todayKwhChart.updateOptions({
+                        plotOptions: {
+                            radialBar: { dataLabels: { value: { formatter: (val) => `${todayKwh.toFixed(2)} kWh` } } }
+                        }
+                    });
+
+                    // --- 比照辦理：處理今日碳排量 (CO2e) ---
                     const todayCo2e = todayKwh * TAIPOWER_CO2E_FACTOR;
-                    todayKwhChart.updateSeries([todayKwh]);
-                    todayCo2eChart.updateSeries([todayCo2e]);
+                    const dailyCo2ePercentage = (todayCo2e / dailyCo2eGoal) * 100;
+                    todayCo2eChart.updateSeries([dailyCo2ePercentage]);
+                    todayCo2eChart.updateOptions({
+                        plotOptions: {
+                            radialBar: { dataLabels: { value: { formatter: (val) => `${todayCo2e.toFixed(2)} Kg` } } }
+                        }
+                    });
+
                     console.log('今日數據更新成功:', todayResult);
                 } else {
                     console.error('今日API 錯誤:', todayResult);
