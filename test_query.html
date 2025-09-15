@@ -153,6 +153,20 @@
                 chart: {
                     height: 350,
                     type: 'radialBar',
+                    // --- 在這裡加入動畫設定 ---
+                    animations: {
+                        enabled: true,
+                        easing: 'easeinout', // 動畫的緩動效果，例如 'linear', 'easein', 'easeout', 'easeinout'
+                        speed: 1000, // 動畫從開始到結束的速度（毫秒）
+                        animateGradually: {
+                            enabled: true,
+                            delay: 150 // 每個數據系列之間的延遲（對於多系列圖表）
+                        },
+                        dynamicAnimation: {
+                            enabled: true,
+                            speed: 350 // 當數據動態變化時的動畫速度
+                        }
+                    }
                 },
                 plotOptions: {
                     radialBar: {
@@ -226,6 +240,10 @@
             pfChart.render();
             wattChart.render();
             totalWattHoursChart.render();
+
+            setTimeout(() => {
+                fetchTotalData();
+            }, 200); // 延遲 200 毫秒，您可以調整這個時間
         }
 
         function renderChartData(data) {
@@ -254,7 +272,7 @@
 
         async function fetchTotalData() {
             // 1. 在這裡定義您的目標最大值
-            const totalKwhGoal = 200000;  // 假設總用電量的目標是 50,000 kWh
+            const totalKwhGoal = 200000;  // 假設總用電量的目標是 200,000 kWh
             const dailyKwhGoal = 500;    // 假設每日用電量的目標是 500 kWh
 
             // 2. 根據用電量目標和碳排係數，自動換算出碳排的目標最大值
@@ -266,21 +284,22 @@
                 const totalResponse = await fetch(`${CLOUD_RUN_URL}/api/get_total_latest_kwh`);
                 const totalResult = await totalResponse.json();
                 if (totalResponse.ok) {
-                    // --- 處理總用電量 (kWh) ---
                     const totalKwh = totalResult.total_kwh;
+                    const totalCo2e = totalKwh * TAIPOWER_CO2E_FACTOR;
                     const totalPercentage = (totalKwh / totalKwhGoal) * 100;
-                    totalKwhChart.updateSeries([totalPercentage]);
+                    const totalCo2ePercentage = (totalCo2e / totalCo2eGoal) * 100;
+
+                    // --- 合併更新總用電量圖表 ---
                     totalKwhChart.updateOptions({
+                        series: [totalPercentage], // 將 series 數據放在這裡
                         plotOptions: {
                             radialBar: { dataLabels: { value: { formatter: (val) => `${totalKwh.toFixed(2)} kWh` } } }
                         }
                     });
 
-                    // --- 比照辦理：處理總碳排量 (CO2e) ---
-                    const totalCo2e = totalKwh * TAIPOWER_CO2E_FACTOR;
-                    const totalCo2ePercentage = (totalCo2e / totalCo2eGoal) * 100;
-                    totalCo2eChart.updateSeries([totalCo2ePercentage]);
+                    // --- 合併更新總碳排量圖表 ---
                     totalCo2eChart.updateOptions({
+                        series: [totalCo2ePercentage], // 將 series 數據放在這裡
                         plotOptions: {
                             radialBar: { dataLabels: { value: { formatter: (val) => `${totalCo2e.toFixed(2)} Kg` } } }
                         }
@@ -295,21 +314,22 @@
                 const todayResponse = await fetch(`${CLOUD_RUN_URL}/api/get_total_daily_kwh`);
                 const todayResult = await todayResponse.json();
                 if (todayResponse.ok) {
-                    // --- 處理今日用電量 (kWh) ---
                     const todayKwh = todayResult.total_kwh;
+                    const todayCo2e = todayKwh * TAIPOWER_CO2E_FACTOR;
                     const dailyPercentage = (todayKwh / dailyKwhGoal) * 100;
-                    todayKwhChart.updateSeries([dailyPercentage]);
+                    const dailyCo2ePercentage = (todayCo2e / dailyCo2eGoal) * 100;
+
+                    // --- 合併更新今日用電量圖表 ---
                     todayKwhChart.updateOptions({
+                        series: [dailyPercentage], // 將 series 數據放在這裡
                         plotOptions: {
                             radialBar: { dataLabels: { value: { formatter: (val) => `${todayKwh.toFixed(2)} kWh` } } }
                         }
                     });
 
-                    // --- 比照辦理：處理今日碳排量 (CO2e) ---
-                    const todayCo2e = todayKwh * TAIPOWER_CO2E_FACTOR;
-                    const dailyCo2ePercentage = (todayCo2e / dailyCo2eGoal) * 100;
-                    todayCo2eChart.updateSeries([dailyCo2ePercentage]);
+                    // --- 合併更新今日碳排量圖表 ---
                     todayCo2eChart.updateOptions({
+                        series: [dailyCo2ePercentage], // 將 series 數據放在這裡
                         plotOptions: {
                             radialBar: { dataLabels: { value: { formatter: (val) => `${todayCo2e.toFixed(2)} Kg` } } }
                         }
@@ -530,7 +550,6 @@
         
         window.onload = function () {
             initCharts();
-            fetchTotalData();
         };
     </script>
 </body>
