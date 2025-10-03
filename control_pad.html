@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ESP32 遊戲手把</title>
+    <style>
+        :root {
+            --gamepad-bg: #404040;
+            --button-bg: #2c2c2c;
+            --button-active-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --red: #e53935;
+            --green: #43a047;
+            --blue: #1e88e5;
+            --yellow: #fdd835;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #212121;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-color);
+            flex-direction: column;
+            -webkit-user-select: none; /* Safari */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* IE */
+            user-select: none; /* Standard */
+            -webkit-tap-highlight-color: transparent; /* 禁用行動裝置點擊高亮 */
+        }
+
+        .info-panel {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            margin: 0 0 0.5rem 0;
+            font-weight: 300;
+        }
+        
+        #status {
+            font-size: 1em;
+            min-height: 1.2em;
+            color: #bdbdbd;
+        }
+        
+        /* --- 遊戲手把主體 --- */
+        .gamepad-body {
+            display: none; /* 預設隱藏，連接後顯示 */
+            justify-content: space-between;
+            align-items: center;
+            width: 90vw;
+            max-width: 600px;
+            height: 250px;
+            background: linear-gradient(145deg, #454545, #3a3a3a);
+            border-radius: 20px;
+            padding: 20px 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.1);
+            border: 2px solid #282828;
+        }
+
+        /* --- 按鈕通用樣式 --- */
+        .button {
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 5px 8px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.2);
+            transition: all 0.08s ease-out;
+        }
+        .button:active, .button.active {
+            transform: translateY(2px) scale(0.98);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3), inset 0 2px 3px rgba(0,0,0,0.3);
+        }
+
+        /* --- 左側：十字鍵 (D-Pad) --- */
+        .d-pad {
+            position: relative;
+            width: 150px;
+            height: 150px;
+        }
+        .d-pad .button {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: var(--button-bg);
+            color: #999;
+            font-size: 28px;
+            line-height: 50px;
+            text-align: center;
+        }
+        #btn-up { top: 0; left: 50px; border-radius: 8px 8px 0 0; }
+        #btn-down { bottom: 0; left: 50px; border-radius: 0 0 8px 8px; }
+        #btn-left { top: 50px; left: 0; border-radius: 8px 0 0 8px; }
+        #btn-right { top: 50px; right: 0; border-radius: 0 8px 8px 0; }
+        .d-pad::after {
+            content: '';
+            position: absolute;
+            top: 50px;
+            left: 50px;
+            width: 50px;
+            height: 50px;
+            background: #333;
+            box-shadow: inset 0 3px 5px rgba(0,0,0,0.4);
+        }
+
+        /* --- 中間：控制按鈕 --- */
+        .center-controls {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+        }
+        .center-controls .button {
+            width: 80px;
+            height: 30px;
+            border-radius: 15px;
+            background-color: #222;
+            color: var(--text-color);
+            font-size: 14px;
+            font-weight: bold;
+        }
+        #btn-connect {
+             background: var(--blue);
+        }
+
+        /* --- 右側：動作按鈕 (A,B,X,Y) --- */
+        .action-buttons {
+            position: relative;
+            width: 150px;
+            height: 150px;
+        }
+        .action-buttons .button {
+            position: absolute;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        #btn-y { top: 0; left: 47.5px; background-color: var(--yellow); color: #555;}
+        #btn-b { bottom: 0; left: 47.5px; background-color: var(--red); }
+        #btn-x { top: 47.5px; left: 0; background-color: var(--blue); }
+        #btn-a { top: 47.5px; right: 0; background-color: var(--green); }
+
+
+        /* 行動裝置響應式設計 */
+        @media (max-width: 650px) {
+            .gamepad-body {
+                flex-direction: column;
+                height: auto;
+                width: 85vw;
+                padding: 30px 15px;
+            }
+            .center-controls {
+                order: -1; /* 將中間按鈕移到最上面 */
+                flex-direction: row;
+                margin-bottom: 20px;
+            }
+            .d-pad { margin-bottom: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="info-panel">
+        <h1>ESP32 無線控制器</h1>
+        <p id="status">請點擊下方按鈕連接你的遊戲機</p>
+    </div>
+
+    
+
+    <div class="gamepad-body" style="display: block flex;">
+        <div class="d-pad">
+            <button class="button" id="btn-up" title="預留 (W/↑)">▲</button>
+            <button class="button" id="btn-left" title="左 (A/←)">◄</button>
+            <button class="button" id="btn-right" title="右 (D/→)">►</button>
+            <button class="button" id="btn-down" title="快速下降 (S/↓)">▼</button>
+        </div>
+	<div class="center-controls">
+            <button class="button" id="btn-connect">連線</button>
+       	    <button class="button" id="btn-pause" style="display;">暫停</button>
+   	 </div>
+        <div class="action-buttons">
+            <button class="button" id="btn-y" title="預留 (Y)">Y</button>
+            <button class="button" id="btn-x" title="快速下降 (X)">X</button>
+            <button class="button" id="btn-b" title="預留 (B)">B</button>
+            <button class="button" id="btn-a" title="旋轉 (A/Space)">A</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 元素節點 ---
+        const elements = {
+            status: document.getElementById('status'),
+            connectBtn: document.getElementById('btn-connect'),
+            pauseBtn: document.getElementById('btn-pause'),
+            gamepadBody: document.querySelector('.gamepad-body'),
+            buttons: {
+                up: document.getElementById('btn-up'),
+                down: document.getElementById('btn-down'),
+                left: document.getElementById('btn-left'),
+                right: document.getElementById('btn-right'),
+                a: document.getElementById('btn-a'),
+                b: document.getElementById('btn-b'),
+                x: document.getElementById('btn-x'),
+                y: document.getElementById('btn-y'),
+            }
+        };
+
+        // --- 藍牙設定 (必須與 ESP32 程式碼一致) ---
+        const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+        const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+        let gameCharacteristic;
+
+        // --- 指令碼 (Byte) ---
+        const COMMANDS = {
+            LEFT:       0x01,
+            RIGHT:      0x02,
+            ROTATE:     0x03,
+            FAST_DROP:  0x04,
+            PAUSE:      0x05,
+        };
+
+        // --- 連接藍牙 ---
+        elements.connectBtn.addEventListener('click', async () => {
+            if (!navigator.bluetooth) {
+                elements.status.textContent = '錯誤: 您的瀏覽器不支援 Web Bluetooth！';
+                return;
+            }
+            try {
+                elements.status.textContent = '正在掃描藍牙裝置...';
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [SERVICE_UUID] }],
+                    optionalServices: [SERVICE_UUID]
+                });
+
+                elements.status.textContent = '正在連接裝置...';
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                gameCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+                elements.status.textContent = '✅ 連接成功！可以開始遊戲了！';
+                elements.connectBtn.style.display = 'none';
+                elements.pauseBtn.style.display = 'block';
+                elements.gamepadBody.style.display = 'flex';
+
+            } catch(error) {
+                console.error('連線失敗:', error);
+                elements.status.textContent = `❌ 連線失敗: ${error.message}`;
+            }
+        });
+        
+        // --- 發送指令函式 ---
+        async function sendCommand(command) {
+            if (!gameCharacteristic) return;
+            try {
+                // 使用 writeValueWithoutResponse 通常延遲較低
+                await gameCharacteristic.writeValueWithoutResponse(new Uint8Array([command]));
+            } catch (error) {
+                console.error('指令發送失敗:', error);
+            }
+        }
+
+        // --- 按鈕與指令的映射 ---
+        const buttonActions = [
+            { el: elements.buttons.left,  cmd: COMMANDS.LEFT },
+            { el: elements.buttons.right, cmd: COMMANDS.RIGHT },
+            { el: elements.buttons.down,  cmd: COMMANDS.FAST_DROP },
+            { el: elements.buttons.a,     cmd: COMMANDS.ROTATE },
+            { el: elements.buttons.x,     cmd: COMMANDS.FAST_DROP },
+            { el: elements.pauseBtn,      cmd: COMMANDS.PAUSE },
+        ];
+        
+        buttonActions.forEach(action => {
+            // 對於觸控裝置，使用 touchstart 和 touchend
+            action.el.addEventListener('touchstart', (e) => { e.preventDefault(); sendCommand(action.cmd); }, { passive: false });
+            // 對於滑鼠
+            action.el.addEventListener('mousedown', () => sendCommand(action.cmd));
+        });
+
+        // --- 鍵盤支援 ---
+        const keyMap = {
+            'ArrowLeft':  { el: elements.buttons.left,  cmd: COMMANDS.LEFT },
+            'a':          { el: elements.buttons.left,  cmd: COMMANDS.LEFT },
+            'ArrowRight': { el: elements.buttons.right, cmd: COMMANDS.RIGHT },
+            'd':          { el: elements.buttons.right, cmd: COMMANDS.RIGHT },
+            'ArrowDown':  { el: elements.buttons.down,  cmd: COMMANDS.FAST_DROP },
+            's':          { el: elements.buttons.down,  cmd: COMMANDS.FAST_DROP },
+            'x':          { el: elements.buttons.x,     cmd: COMMANDS.FAST_DROP },
+            'ArrowUp':    { el: elements.buttons.a,     cmd: COMMANDS.ROTATE }, // 上鍵也對應旋轉A
+            'w':          { el: elements.buttons.a,     cmd: COMMANDS.ROTATE },
+            ' ':          { el: elements.buttons.a,     cmd: COMMANDS.ROTATE }, // 空白鍵對應旋轉A
+            'p':          { el: elements.pauseBtn,      cmd: COMMANDS.PAUSE },
+        };
+
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            const action = keyMap[key];
+            if (action && !e.repeat) {
+                e.preventDefault();
+                sendCommand(action.cmd);
+                action.el.classList.add('active');
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            const action = keyMap[key];
+            if (action) {
+                action.el.classList.remove('active');
+            }
+        });
+
+    </script>
+</body>
+</html>
