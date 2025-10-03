@@ -163,14 +163,41 @@
             }
             .d-pad { margin-bottom: 20px; }
         }
+	#fullscreen-lock-btn {
+    		display: none; /* 預設在桌面版隱藏 */
+    		margin-bottom: 1rem;
+    		padding: 8px 16px;
+    		font-size: 1em;
+    		font-weight: bold;
+    		color: white;
+    		background-color: #0275d8;
+    		border: none;
+    		border-radius: 8px;
+    		cursor: pointer;
+    		transition: background-color 0.2s;
+	}
+
+	#fullscreen-lock-btn:hover {
+    		background-color: #025aa5;
+	}
+
+	/* 當螢幕寬度小於 768px 時，顯示此按鈕 */
+	@media (max-width: 768px) {
+    		#fullscreen-lock-btn {
+        	display: inline-block; /* 在手機上顯示為塊級元素 */
+   	 }
+	}	
     </style>
 </head>
 <body>
 
-    <div class="info-panel">
-        <h1>ESP32 無線控制器</h1>
-        <p id="status">請點擊下方按鈕連接你的遊戲機</p>
-    </div>
+<div class="info-panel">
+    <h1>ESP32 無線控制器</h1>
+    
+    <button id="fullscreen-lock-btn" class="show-on-mobile">橫向全螢幕</button>
+    
+    <p id="status">請點擊手把中央的「連線」按鈕</p>
+</div>
 
     
 
