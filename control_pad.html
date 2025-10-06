@@ -14,7 +14,6 @@
             --blue: #1e88e5;
             --yellow: #fdd835;
         }
-
         body {
             display: flex;
             justify-content: center;
@@ -29,32 +28,25 @@
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
-
-        /* --- 主要佈局與資訊面板 --- */
         .main-container {
             width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-
         .info-panel {
             text-align: center;
             margin-bottom: 2rem;
             min-height: 3em;
         }
-
         h1 {
             margin: 0 0 0.5rem 0;
             font-weight: 300;
         }
-        
         #status {
             font-size: 1em;
             color: #bdbdbd;
         }
-
-        /* --- 遊戲手把主體 --- */
         .gamepad-body {
             display: flex;
             justify-content: space-between;
@@ -68,7 +60,6 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.1);
             border: 2px solid #282828;
         }
-
         .button {
             border: none;
             cursor: pointer;
@@ -79,13 +70,9 @@
             transform: translateY(2px) scale(0.98);
             box-shadow: 0 2px 4px rgba(0,0,0,0.3), inset 0 2px 3px rgba(0,0,0,0.3);
         }
-        
-        /* --- 遊戲按鈕初始狀態 --- */
         .d-pad, .action-buttons, #btn-pause {
             display: none;
         }
-
-        /* --- 左側：十字鍵 (D-Pad) --- */
         .d-pad {
             position: relative;
             width: 150px;
@@ -110,8 +97,6 @@
             width: 50px; height: 50px; background: #333;
             box-shadow: inset 0 3px 5px rgba(0,0,0,0.4);
         }
-
-        /* --- 中間：控制按鈕 --- */
         .center-controls {
             display: flex;
             flex-direction: row;
@@ -127,8 +112,6 @@
             font-weight: bold;
         }
         #btn-connect { background: var(--blue); }
-
-        /* --- 右側：動作按鈕 (A,B,X,Y) --- */
         .action-buttons {
             position: relative;
             width: 150px;
@@ -143,17 +126,12 @@
         #btn-b { bottom: 0; left: 47.5px; background-color: var(--red); }
         #btn-x { top: 47.5px; left: 0; background-color: var(--blue); }
         #btn-a { top: 47.5px; right: 0; background-color: var(--green); }
-
-        /* --- 手機版專用按鈕 --- */
         #fullscreen-lock-btn {
             display: none;
             margin-bottom: 1rem; padding: 8px 16px; font-size: 1em;
             font-weight: bold; color: white; background-color: #0275d8;
             border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s;
         }
-        #fullscreen-lock-btn:hover { background-color: #025aa5; }
-
-        /* --- 橫向提示層 --- */
         #orientation-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #212121; z-index: 9999; display: none;
@@ -163,35 +141,13 @@
             display: flex; flex-direction: column; align-items: center; gap: 1rem;
         }
         #orientation-overlay p { font-size: 1.2rem; line-height: 1.5; }
-
-        /* --- 響應式與手機版修正 --- */
         @media (max-width: 768px) {
             #fullscreen-lock-btn { display: inline-block; }
         }
-
         @media (orientation: portrait) and (max-width: 800px) {
             .main-container { display: none; }
             #orientation-overlay { display: flex; }
         }
-        
-        /* 解決在舊版響應式垂直排列時，D-Pad壓縮的問題 */
-        @media (max-width: 650px) and (orientation: portrait) {
-            .gamepad-body {
-                flex-direction: column; height: auto; width: 85vw;
-                padding: 30px 15px; gap: 20px;
-            }
-            .d-pad { width: 120px; height: 120px; }
-            .d-pad .button {
-                width: 40px; height: 40px; font-size: 24px; line-height: 40px;
-                display: flex; justify-content: center; align-items: center; padding: 0;
-            }
-            #btn-up { top: 0; left: 40px; }
-            #btn-down { bottom: 0; left: 40px; }
-            #btn-left { top: 40px; left: 0; }
-            #btn-right { top: 40px; right: 0; }
-            .d-pad::after { top: 40px; left: 40px; width: 40px; height: 40px; }
-        }
-
     </style>
 </head>
 <body>
@@ -200,7 +156,7 @@
         <div class="info-panel">
             <h1>ESP32 無線控制器</h1>
             <button id="fullscreen-lock-btn" class="show-on-mobile">橫向全螢幕</button>
-            <div id="score-board" style="display: block; margin-top: 1rem;">
+            <div id="score-board" style="display: none; margin-top: 1rem;">
                 <span style="margin: 0 10px;">分數: <b id="score">0</b></span>
                 <span style="margin: 0 10px;">等級: <b id="level">1</b></span>
                 <span style="margin: 0 10px;">行數: <b id="lines">0</b></span>
@@ -209,23 +165,23 @@
         </div>
 
         <div class="gamepad-body" >
-            <div class="d-pad" style="display: block;">
+            <div class="d-pad">
                 <button class="button" id="btn-up" title="預留 (W/↑)">▲</button>
                 <button class="button" id="btn-left" title="左 (A/←)">◄</button>
                 <button class="button" id="btn-right" title="右 (D/→)">►</button>
-                <button class="button" id="btn-down" title="快速下降 (S/↓)">▼</button>
+                <button class="button" id="btn-down" title="加速下降 (S/↓)">▼</button>
             </div>
 
-            <div class="center-controls" style="display: block flex;">
+            <div class="center-controls">
                 <button class="button" id="btn-connect">連線</button>
-                <button class="button" id="btn-pause" style="display: block;">暫停</button>
+                <button class="button" id="btn-pause">暫停</button>
             </div>
 
-            <div class="action-buttons" style="display: block;">
+            <div class="action-buttons">
                 <button class="button" id="btn-y" title="預留 (Y)">Y</button>
-                <button class="button" id="btn-x" title="快速下降 (X)">X</button>
-                <button class="button" id="btn-b" title="預留 (B)">B</button>
-                <button class="button" id="btn-a" title="旋轉 (A/Space)">A</button>
+                <button class="button" id="btn-x" title="加速下降 (X)">X</button>
+                <button class="button" id="btn-b" title="重新開始 (B)">B</button>
+                <button class="button" id="btn-a" title="旋轉 (Space)">A</button>
             </div>
         </div>
     </div>
@@ -238,7 +194,6 @@
     </div>
 
     <script>
-        // --- 元素節點 ---
         const elements = {
             status: document.getElementById('status'),
             connectBtn: document.getElementById('btn-connect'),
@@ -246,10 +201,10 @@
             fullscreenBtn: document.getElementById('fullscreen-lock-btn'),
             dPad: document.querySelector('.d-pad'),
             actionButtons: document.querySelector('.action-buttons'),
-            scoreBoard: document.getElementById('score-board'), // (新增)
-            scoreDisplay: document.getElementById('score'),   // (新增)
-            levelDisplay: document.getElementById('level'),   // (新增)
-            linesDisplay: document.getElementById('lines'),   // (新增)
+            scoreBoard: document.getElementById('score-board'),
+            scoreDisplay: document.getElementById('score'),
+            levelDisplay: document.getElementById('level'),
+            linesDisplay: document.getElementById('lines'),
             buttons: {
                 up: document.getElementById('btn-up'), down: document.getElementById('btn-down'),
                 left: document.getElementById('btn-left'), right: document.getElementById('btn-right'),
@@ -258,20 +213,19 @@
             }
         };
 
-        // --- 藍牙設定 ---
         const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
         const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
         const GAME_STATE_CHAR_UUID = "1e62136e-3907-4258-9ca3-a4f21a5301a2";
         let gameCharacteristic;
-        let gameStateCharacteristic; // (新增這行)
+        let gameStateCharacteristic;
 
-        // --- 指令碼 ---
         const COMMANDS = {
             LEFT: 0x01, RIGHT: 0x02, ROTATE: 0x03, FAST_DROP: 0x04, PAUSE: 0x05,
+            SOFT_DROP_START: 0x06,
+            SOFT_DROP_END: 0x07,
+            RESTART: 0x08,
         };
 
-        // --- 連接藍牙 ---
-       // --- 連接藍牙 ---
         elements.connectBtn.addEventListener('click', async () => {
             if (!navigator.bluetooth) {
                 elements.status.textContent = '錯誤: 您的瀏覽器不支援 Web Bluetooth！';
@@ -279,23 +233,15 @@
             }
             try {
                 elements.status.textContent = '正在請求藍牙裝置...';
-
-                // --- (修正) 新增這段請求裝置的程式碼 ---
                 const device = await navigator.bluetooth.requestDevice({
                     filters: [{ services: [SERVICE_UUID] }]
-                    // acceptAllDevices: true, // 如果用 service UUID 找不到，可以嘗試這個
-                    // optionalServices: [SERVICE_UUID]
                 });
 
                 elements.status.textContent = `找到裝置: ${device.name}，正在連線...`;
-                
                 const server = await device.gatt.connect();
                 const service = await server.getPrimaryService(SERVICE_UUID);
 
-                // 取得寫入指令用的特徵
                 gameCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
-
-                // 取得並監聽遊戲狀態特徵
                 gameStateCharacteristic = await service.getCharacteristic(GAME_STATE_CHAR_UUID);
                 await gameStateCharacteristic.startNotifications();
                 gameStateCharacteristic.addEventListener('characteristicvaluechanged', handleGameStateUpdate);
@@ -309,7 +255,6 @@
 
             } catch (error) {
                 console.error('連線失敗:', error);
-                // 使用者如果取消選擇，也會觸發錯誤，這時給予提示
                 if (error.name === 'NotFoundError') {
                     elements.status.textContent = '您已取消選擇藍牙裝置';
                 } else {
@@ -318,7 +263,6 @@
             }
         });
         
-        // --- 發送指令函式 ---
         async function sendCommand(command) {
             if (!gameCharacteristic) return;
             try {
@@ -326,39 +270,70 @@
             } catch (error) { console.error('指令發送失敗:', error); }
         }
 
-        // --- 按鈕與指令的映射 ---
         const buttonActions = [
-            { el: elements.buttons.left,  cmd: COMMANDS.LEFT }, { el: elements.buttons.right, cmd: COMMANDS.RIGHT },
-            { el: elements.buttons.down,  cmd: COMMANDS.FAST_DROP }, { el: elements.buttons.a, cmd: COMMANDS.ROTATE },
-            { el: elements.buttons.x,     cmd: COMMANDS.FAST_DROP }, { el: elements.pauseBtn, cmd: COMMANDS.PAUSE },
+            { el: elements.buttons.left,  cmd: COMMANDS.LEFT }, 
+            { el: elements.buttons.right, cmd: COMMANDS.RIGHT },
+            { el: elements.buttons.a,     cmd: COMMANDS.ROTATE },
+            { el: elements.buttons.b,     cmd: COMMANDS.RESTART },
+            { el: elements.pauseBtn,      cmd: COMMANDS.PAUSE },
         ];
-        // 使用 pointerdown 事件來統一處理滑鼠與觸控，避免重複觸發
+        
         buttonActions.forEach(action => {
             action.el.addEventListener('pointerdown', (e) => {
-                e.preventDefault(); // 防止觸控時觸發頁面滾動或縮放等預設行為
+                e.preventDefault();
                 sendCommand(action.cmd);
             });
         });
 
-        // --- 鍵盤支援 ---
-        const keyMap = {
-            'arrowleft': { el: elements.buttons.left, cmd: COMMANDS.LEFT }, 'a': { el: elements.buttons.left, cmd: COMMANDS.LEFT },
-            'arrowright': { el: elements.buttons.right, cmd: COMMANDS.RIGHT }, 'd': { el: elements.buttons.right, cmd: COMMANDS.RIGHT },
-            'arrowdown': { el: elements.buttons.down, cmd: COMMANDS.FAST_DROP }, 's': { el: elements.buttons.down, cmd: COMMANDS.FAST_DROP },
-            'x': { el: elements.buttons.x, cmd: COMMANDS.FAST_DROP },
-            'arrowup': { el: elements.buttons.a, cmd: COMMANDS.ROTATE }, 'w': { el: elements.buttons.a, cmd: COMMANDS.ROTATE },
-            ' ': { el: elements.buttons.a, cmd: COMMANDS.ROTATE }, 'p': { el: elements.pauseBtn, cmd: COMMANDS.PAUSE },
-        };
-        window.addEventListener('keydown', (e) => {
-            const key = e.key.toLowerCase(); const action = keyMap[key];
-            if (action && !e.repeat) { e.preventDefault(); sendCommand(action.cmd); action.el.classList.add('active'); }
-        });
-        window.addEventListener('keyup', (e) => {
-            const key = e.key.toLowerCase(); const action = keyMap[key];
-            if (action) { action.el.classList.remove('active'); }
+        const softDropButtons = [elements.buttons.down, elements.buttons.x];
+        softDropButtons.forEach(btn => {
+            btn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                sendCommand(COMMANDS.SOFT_DROP_START);
+            });
+            btn.addEventListener('pointerup', (e) => {
+                e.preventDefault();
+                sendCommand(COMMANDS.SOFT_DROP_END);
+            });
+            btn.addEventListener('pointerleave', (e) => {
+                sendCommand(COMMANDS.SOFT_DROP_END);
+            });
         });
 
-        // --- 全螢幕與鎖定方向 ---
+        const keyMap = {
+            'arrowleft':  { el: elements.buttons.left,  cmd: COMMANDS.LEFT },
+            'a':          { el: elements.buttons.left,  cmd: COMMANDS.LEFT },
+            'arrowright': { el: elements.buttons.right, cmd: COMMANDS.RIGHT },
+            'd':          { el: elements.buttons.right, cmd: COMMANDS.RIGHT },
+            'arrowdown':  { el: elements.buttons.down,  cmdStart: COMMANDS.SOFT_DROP_START, cmdEnd: COMMANDS.SOFT_DROP_END },
+            's':          { el: elements.buttons.down,  cmdStart: COMMANDS.SOFT_DROP_START, cmdEnd: COMMANDS.SOFT_DROP_END },
+            'x':          { el: elements.buttons.x,     cmdStart: COMMANDS.SOFT_DROP_START, cmdEnd: COMMANDS.SOFT_DROP_END },
+            ' ':          { el: elements.buttons.a,     cmd: COMMANDS.ROTATE },
+            'p':          { el: elements.pauseBtn,      cmd: COMMANDS.PAUSE },
+            'b':          { el: elements.buttons.b,     cmd: COMMANDS.RESTART },
+        };
+
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase(); 
+            const action = keyMap[key];
+            if (action && !e.repeat) { 
+                e.preventDefault(); 
+                sendCommand(action.cmdStart || action.cmd);
+                action.el.classList.add('active'); 
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase(); 
+            const action = keyMap[key];
+            if (action) { 
+                if (action.cmdEnd) {
+                    sendCommand(action.cmdEnd);
+                }
+                action.el.classList.remove('active'); 
+            }
+        });
+
         if (elements.fullscreenBtn) {
             elements.fullscreenBtn.addEventListener('click', async () => {
                 if (!document.documentElement.requestFullscreen) { elements.status.textContent = '您的瀏覽器不支援全螢幕'; return; }
@@ -371,19 +346,17 @@
                 } catch (error) { console.error('操作失敗:', error); elements.status.textContent = '操作失敗，您可能已取消請求'; }
             });
         }
+        
         function handleGameStateUpdate(event) {
-    const value = event.target.value;
-    const decoder = new TextDecoder('utf-8');
-    const stateString = decoder.decode(value); // 將收到的資料解碼為字串
+            const value = event.target.value;
+            const decoder = new TextDecoder('utf-8');
+            const stateString = decoder.decode(value);
+            const [score, level, lines] = stateString.split(',');
 
-    // stateString 的格式應為 "分數,等級,總行數"
-    const [score, level, lines] = stateString.split(',');
-
-    // 更新網頁上的數值
-    if (score !== undefined) elements.scoreDisplay.textContent = score;
-    if (level !== undefined) elements.levelDisplay.textContent = level;
-    if (lines !== undefined) elements.linesDisplay.textContent = lines;
-}
+            if (score !== undefined) elements.scoreDisplay.textContent = score;
+            if (level !== undefined) elements.levelDisplay.textContent = level;
+            if (lines !== undefined) elements.linesDisplay.textContent = lines;
+        }
     </script>
 </body>
 </html>
