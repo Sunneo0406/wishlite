@@ -271,33 +271,50 @@
         };
 
         // --- 連接藍牙 ---
+       // --- 連接藍牙 ---
         elements.connectBtn.addEventListener('click', async () => {
             if (!navigator.bluetooth) {
-                elements.status.textContent = '錯誤: 您的瀏覽器不支援 Web Bluetooth！'; return;
+                elements.status.textContent = '錯誤: 您的瀏覽器不支援 Web Bluetooth！';
+                return;
             }
             try {
-        // ...
-                     const server = await device.gatt.connect();
-                     const service = await server.getPrimaryService(SERVICE_UUID);
+                elements.status.textContent = '正在請求藍牙裝置...';
 
-        // 取得寫入指令用的特徵
-                     gameCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+                // --- (修正) 新增這段請求裝置的程式碼 ---
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [SERVICE_UUID] }]
+                    // acceptAllDevices: true, // 如果用 service UUID 找不到，可以嘗試這個
+                    // optionalServices: [SERVICE_UUID]
+                });
 
-        // (--- 新增/修改的部分 START ---)
-        // 取得並監聽遊戲狀態特徵
-                    gameStateCharacteristic = await service.getCharacteristic(GAME_STATE_CHAR_UUID);
-                    await gameStateCharacteristic.startNotifications();
-                    gameStateCharacteristic.addEventListener('characteristicvaluechanged', handleGameStateUpdate);
-        // (--- 新增/修改的部分 END ---)
+                elements.status.textContent = `找到裝置: ${device.name}，正在連線...`;
+                
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
 
+                // 取得寫入指令用的特徵
+                gameCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
 
-                    elements.status.textContent = '✅ 連接成功！可以開始遊戲了！';
-                    elements.connectBtn.style.display = 'none';
-        // ...
-                    elements.scoreBoard.style.display = 'block'; // (新增) 顯示計分板
-            } catch(error) {
+                // 取得並監聽遊戲狀態特徵
+                gameStateCharacteristic = await service.getCharacteristic(GAME_STATE_CHAR_UUID);
+                await gameStateCharacteristic.startNotifications();
+                gameStateCharacteristic.addEventListener('characteristicvaluechanged', handleGameStateUpdate);
+
+                elements.status.textContent = '✅ 連接成功！可以開始遊戲了！';
+                elements.connectBtn.style.display = 'none';
+                elements.pauseBtn.style.display = 'block';
+                elements.dPad.style.display = 'block';
+                elements.actionButtons.style.display = 'block';
+                elements.scoreBoard.style.display = 'block';
+
+            } catch (error) {
                 console.error('連線失敗:', error);
-                elements.status.textContent = `❌ 連線失敗: ${error.message}`;
+                // 使用者如果取消選擇，也會觸發錯誤，這時給予提示
+                if (error.name === 'NotFoundError') {
+                    elements.status.textContent = '您已取消選擇藍牙裝置';
+                } else {
+                    elements.status.textContent = `❌ 連線失敗: ${error.message}`;
+                }
             }
         });
         
