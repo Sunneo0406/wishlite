@@ -299,9 +299,12 @@
             { el: elements.buttons.down,  cmd: COMMANDS.FAST_DROP }, { el: elements.buttons.a, cmd: COMMANDS.ROTATE },
             { el: elements.buttons.x,     cmd: COMMANDS.FAST_DROP }, { el: elements.pauseBtn, cmd: COMMANDS.PAUSE },
         ];
+        // 使用 pointerdown 事件來統一處理滑鼠與觸控，避免重複觸發
         buttonActions.forEach(action => {
-            action.el.addEventListener('mousedown', () => sendCommand(action.cmd));
-            action.el.addEventListener('touchstart', (e) => { e.preventDefault(); sendCommand(action.cmd); }, { passive: false });
+            action.el.addEventListener('pointerdown', (e) => {
+                e.preventDefault(); // 防止觸控時觸發頁面滾動或縮放等預設行為
+                sendCommand(action.cmd);
+            });
         });
 
         // --- 鍵盤支援 ---
