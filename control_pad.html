@@ -20,14 +20,15 @@
         h1 { margin: 0 0 0.5rem 0; font-weight: 300; }
         #status { font-size: 1em; color: #bdbdbd; }
         .gamepad-body {
-            display: none; /* 改為預設隱藏 */
+            /* vvvvvvvvvv 【已修正】 vvvvvvvvvv */
+            display: flex; /* 從 none 改回 flex，讓控制器容器預設可見 */
+            /* ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
             justify-content: space-between; align-items: center; width: 90vw; max-width: 600px;
             height: 250px; background: linear-gradient(145deg, #454545, #3a3a3a);
             border-radius: 20px; padding: 20px 30px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.1);
             border: 2px solid #282828;
         }
-        /* vvvvvvvvvv 新增遊戲選擇畫面樣式 vvvvvvvvvv */
         #game-selection {
             display: none; /* 預設隱藏 */
             flex-direction: column;
@@ -55,7 +56,6 @@
         }
         .game-btn:hover { background: #1579c9; }
         .game-btn:active { transform: translateY(2px) scale(0.98); }
-        /* ^^^^^^^^^^ 結束新增樣式 ^^^^^^^^^^ */
 
         .button {
             border: none; cursor: pointer;
@@ -66,6 +66,7 @@
             transform: translateY(2px) scale(0.98);
             box-shadow: 0 2px 4px rgba(0,0,0,0.3), inset 0 2px 3px rgba(0,0,0,0.3);
         }
+        /* 方向鍵、功能鍵、暫停鍵預設隱藏，這是正確的 */
         .d-pad, .action-buttons, #btn-pause { display: none; }
         .d-pad { position: relative; width: 150px; height: 150px; }
         .d-pad .button { position: absolute; width: 50px; height: 50px; background-color: var(--button-bg); color: #999; font-size: 28px; line-height: 50px; text-align: center; }
@@ -157,14 +158,14 @@
         const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
         const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
         const GAME_STATE_CHAR_UUID = "1e62136e-3907-4258-9ca3-a4f21a5301a2";
+        let bleServer;
+        let bleService;
         let gameCharacteristic;
         let gameStateCharacteristic;
 
-        // --- 指令碼更新 ---
         const COMMANDS = {
             LEFT: 0x01, RIGHT: 0x02, UP: 0x03, DOWN: 0x04,
             ACTION_A: 0x05, ACTION_B: 0x06, PAUSE: 0x07,
-            SOFT_DROP_START: 0x08, SOFT_DROP_END: 0x09,
             SELECT_GAME: 0x10
         };
         const GAMES = {
@@ -172,35 +173,62 @@
         };
 
         elements.connectBtn.addEventListener('click', async () => {
-            // ... 連線邏輯不變 ...
             try {
-                // ...
+                elements.status.textContent = '藍牙掃描中...';
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [SERVICE_UUID] }]
+                });
+                
+                elements.status.textContent = '正在連接至裝置...';
+                const server = await device.gatt.connect();
+                bleServer = server; // 保存 server 實例
+
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                bleService = service; // 保存 service 實例
+
+                gameCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+                gameStateCharacteristic = await service.getCharacteristic(GAME_STATE_CHAR_UUID);
+                
                 await gameStateCharacteristic.startNotifications();
                 gameStateCharacteristic.addEventListener('characteristicvaluechanged', handleGameStateUpdate);
 
+                device.addEventListener('gattserverdisconnected', onDisconnected);
+
                 elements.status.textContent = '✅ 連接成功！請選擇一個遊戲。';
                 elements.connectBtn.style.display = 'none';
+                elements.gamepadBody.style.display = 'none'; // 隱藏控制器
                 elements.gameSelection.style.display = 'flex'; // 顯示遊戲選擇畫面
 
             } catch (error) {
-                // ... 錯誤處理不變 ...
+                elements.status.textContent = `❌ 連線失敗: ${error.message.split(' GATTSERVER:')[0]}`;
+                console.error(error);
             }
         });
+
+        function onDisconnected() {
+            elements.status.textContent = '藍牙已斷線。請重新整理頁面。';
+            elements.connectBtn.style.display = 'block';
+            elements.gamepadBody.style.display = 'flex';
+            elements.gameSelection.style.display = 'none';
+            elements.dPad.style.display = 'none';
+            elements.actionButtons.style.display = 'none';
+            elements.pauseBtn.style.display = 'none';
+            elements.scoreBoard.style.display = 'none';
+        }
         
         async function sendCommand(command, value = null) {
             if (!gameCharacteristic) return;
             try {
                 let data;
                 if (value !== null) {
-                    data = new Uint8Array([command, value]); // 帶參數的指令
+                    data = new Uint8Array([command, value]);
                 } else {
-                    data = new Uint8Array([command]); // 無參數指令
+                    data = new Uint8Array([command]);
                 }
                 await gameCharacteristic.writeValueWithoutResponse(data);
             } catch (error) { console.error('指令發送失敗:', error); }
         }
 
-        // --- 遊戲選擇邏輯 ---
         elements.buttons.selectTetris.addEventListener('click', () => selectGame(GAMES.TETRIS));
         elements.buttons.selectSnake.addEventListener('click', () => selectGame(GAMES.SNAKE));
         
@@ -210,75 +238,125 @@
             elements.gamepadBody.style.display = 'flex';
             elements.scoreBoard.style.display = 'block';
 
-            // 根據遊戲顯示對應的控制器
+            // 清理舊的按鈕事件，防止重複綁定
+            const oldActionButtons = elements.actionButtons.cloneNode(true);
+            elements.actionButtons.parentNode.replaceChild(oldActionButtons, elements.actionButtons);
+            elements.actionButtons = oldActionButtons; // 更新 DOM 引用
+
             if (gameId === GAMES.TETRIS) {
+                // 恢復俄羅斯方塊的按鈕配置
+                elements.actionButtons.innerHTML = `
+                    <button class="button" id="btn-y" title="預留 (Y)">Y</button>
+                    <button class="button" id="btn-x" title="加速下降 (X)">X</button>
+                    <button class="button" id="btn-b" title="重新開始/返回 (B)">B</button>
+                    <button class="button" id="btn-a" title="旋轉 (Space)">A</button>`;
+                
+                // 重新綁定事件
+                const btnA = document.getElementById('btn-a');
+                const btnB = document.getElementById('btn-b');
+                const btnX = document.getElementById('btn-x');
+                
+                btnA.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.ACTION_A); });
+                btnB.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.ACTION_B); });
+                btnX.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); });
+
                 elements.dPad.style.display = 'block';
                 elements.actionButtons.style.display = 'block';
                 elements.pauseBtn.style.display = 'block';
                 elements.buttons.up.title = "瞬降 (W/↑)";
                 elements.buttons.down.title = "緩降 (S/↓)";
-                elements.buttons.a.title = "旋轉 (Space)";
-                elements.buttons.b.title = "重新開始 (B)";
+
             } else if (gameId === GAMES.SNAKE) {
-                elements.dPad.style.display = 'block';
-                elements.actionButtons.style.display = 'none'; // 貪吃蛇不需要 A,B,X,Y
-                elements.pauseBtn.style.display = 'block';
-                elements.buttons.up.title = "上 (W/↑)";
-                elements.buttons.down.title = "下 (S/↓)";
-                // B按鈕重新利用為返回遊戲選擇畫面
+                elements.actionButtons.innerHTML = ''; // 清空
                 const restartBtn = document.createElement('button');
                 restartBtn.className = 'button';
                 restartBtn.textContent = '返回';
                 restartBtn.style.backgroundColor = 'var(--red)';
                 restartBtn.style.color = 'white';
+                restartBtn.id = 'btn-snake-return';
                 restartBtn.addEventListener('pointerdown', () => sendCommand(COMMANDS.ACTION_B));
-                elements.actionButtons.innerHTML = '';
                 elements.actionButtons.appendChild(restartBtn);
+
+                elements.dPad.style.display = 'block';
                 elements.actionButtons.style.display = 'block';
+                elements.pauseBtn.style.display = 'block';
+                elements.buttons.up.title = "上 (W/↑)";
+                elements.buttons.down.title = "下 (S/↓)";
             }
         }
 
-        // --- 按鈕和鍵盤映射更新 ---
-        const buttonActions = [
-            { el: elements.buttons.left,  cmd: COMMANDS.LEFT },
-            { el: elements.buttons.right, cmd: COMMANDS.RIGHT },
-            { el: elements.buttons.up,    cmd: COMMANDS.UP }, // 原本是預留，現在改為 UP
-            { el: elements.buttons.a,     cmd: COMMANDS.ACTION_A },
-            { el: elements.buttons.b,     cmd: COMMANDS.ACTION_B },
-            { el: elements.pauseBtn,      cmd: COMMANDS.PAUSE },
-        ];
-        
-        buttonActions.forEach(action => {
-            action.el.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(action.cmd); });
-        });
-
-        const softDropButtons = [elements.buttons.down, elements.buttons.x]; // x 鍵保留給俄羅斯方塊
-        softDropButtons.forEach(btn => {
-            btn.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); }); // 直接發送 DOWN
-        });
+        // --- 靜態按鈕事件綁定 ---
+        document.getElementById('btn-left').addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.LEFT); });
+        document.getElementById('btn-right').addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.RIGHT); });
+        document.getElementById('btn-up').addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.UP); });
+        document.getElementById('btn-down').addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); });
+        elements.pauseBtn.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.PAUSE); });
 
         const keyMap = {
-            'arrowleft':  { el: elements.buttons.left,  cmd: COMMANDS.LEFT }, 'a': { el: elements.buttons.left,  cmd: COMMANDS.LEFT },
-            'arrowright': { el: elements.buttons.right, cmd: COMMANDS.RIGHT },'d': { el: elements.buttons.right, cmd: COMMANDS.RIGHT },
-            'arrowup':    { el: elements.buttons.up,    cmd: COMMANDS.UP },   'w': { el: elements.buttons.up,    cmd: COMMANDS.UP },
-            'arrowdown':  { el: elements.buttons.down,  cmd: COMMANDS.DOWN }, 's': { el: elements.buttons.down,  cmd: COMMANDS.DOWN },
-            ' ':          { el: elements.buttons.a,     cmd: COMMANDS.ACTION_A },
-            'b':          { el: elements.buttons.b,     cmd: COMMANDS.ACTION_B },
-            'p':          { el: elements.pauseBtn,      cmd: COMMANDS.PAUSE },
+            'arrowleft':  { cmd: COMMANDS.LEFT }, 'a': { cmd: COMMANDS.LEFT },
+            'arrowright': { cmd: COMMANDS.RIGHT },'d': { cmd: COMMANDS.RIGHT },
+            'arrowup':    { cmd: COMMANDS.UP },   'w': { cmd: COMMANDS.UP },
+            'arrowdown':  { cmd: COMMANDS.DOWN }, 's': { cmd: COMMANDS.DOWN },
+            ' ':          { cmd: COMMANDS.ACTION_A },
+            'b':          { cmd: COMMANDS.ACTION_B },
+            'p':          { cmd: COMMANDS.PAUSE },
         };
+        
+        function updateButtonHighlight(key, add) {
+            const elMap = {
+                'arrowleft': 'btn-left', 'a': 'btn-left',
+                'arrowright': 'btn-right', 'd': 'btn-right',
+                'arrowup': 'btn-up', 'w': 'btn-up',
+                'arrowdown': 'btn-down', 's': 'btn-down',
+                ' ': 'btn-a', 'b': 'btn-b', 'p': 'btn-pause'
+            };
+            const btnId = elMap[key];
+            if(btnId) {
+                const btn = document.getElementById(btnId);
+                if(btn) {
+                    add ? btn.classList.add('active') : btn.classList.remove('active');
+                }
+            }
+        }
 
         window.addEventListener('keydown', e => {
             const key = e.key.toLowerCase(); const action = keyMap[key];
-            if (action && !e.repeat) { e.preventDefault(); sendCommand(action.cmd); action.el.classList.add('active'); }
+            if (action && !e.repeat) { e.preventDefault(); sendCommand(action.cmd); updateButtonHighlight(key, true); }
         });
         window.addEventListener('keyup', e => {
-            const key = e.key.toLowerCase(); const action = keyMap[key];
-            if (action) { action.el.classList.remove('active'); }
+            const key = e.key.toLowerCase(); updateButtonHighlight(key, false);
         });
 
-        // ... 全螢幕和遊戲狀態更新邏輯不變 ...
         function handleGameStateUpdate(event) {
-            // ... 內容不變 ...
+            const value = event.target.value;
+            const decoder = new TextDecoder('utf-8');
+            const stateString = decoder.decode(value);
+            const [score, level, lines] = stateString.split(',');
+            
+            elements.scoreDisplay.textContent = score;
+            elements.levelDisplay.textContent = level;
+            const linesSpan = elements.linesDisplay.parentNode;
+            if (lines === '-') {
+                linesSpan.style.display = 'none';
+            } else {
+                linesSpan.style.display = 'inline';
+                elements.linesDisplay.textContent = lines;
+            }
+        }
+
+        // 全螢幕和螢幕鎖定
+        if ('orientation' in screen && 'lock' in screen.orientation) {
+            elements.fullscreenBtn.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().then(() => {
+                        screen.orientation.lock('landscape').catch(err => console.log(err));
+                    }).catch(err => console.log(err));
+                } else {
+                    document.exitFullscreen();
+                }
+            });
+        } else {
+            elements.fullscreenBtn.style.display = 'none';
         }
     </script>
 </body>
