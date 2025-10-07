@@ -332,6 +332,17 @@
             const decoder = new TextDecoder('utf-8');
             const stateString = decoder.decode(value);
             const [score, level, lines] = stateString.split(',');
+// vvvvvvvvvv 【新增邏輯】 vvvvvvvvvv
+            // 檢查是否是返回選單的特殊指令
+            if (score === 'MENU') {
+                // 是，則切換回遊戲選擇介面
+                elements.gamepadBody.style.display = 'none';
+                elements.scoreBoard.style.display = 'none';
+                elements.gameSelection.style.display = 'flex';
+                elements.status.textContent = '✅ 請選擇一個遊戲。';
+                return; // 結束函式，不執行後續的分數更新
+            }
+            // ^^^^^^^^^^ 【結束新增】 ^^^^^^^^^^
             
             elements.scoreDisplay.textContent = score;
             elements.levelDisplay.textContent = level;
