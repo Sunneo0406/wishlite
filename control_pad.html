@@ -74,67 +74,145 @@
         #btn-b { bottom: 0; left: 47.5px; background-color: var(--red); }
         #btn-x { top: 47.5px; left: 0; background-color: var(--blue); }
         #btn-a { top: 47.5px; right: 0; background-color: var(--green); }
-        /* ... 其他 CSS ... */
+        #fullscreen-lock-btn { display: none; margin-bottom: 1rem; padding: 8px 16px; font-size: 1em; font-weight: bold; color: white; background-color: #0275d8; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
+        #orientation-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #212121; z-index: 9999; display: none; justify-content: center; align-items: center; text-align: center; color: #fff; }
+        #orientation-overlay .message { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+        #orientation-overlay p { font-size: 1.2rem; line-height: 1.5; }
+        @media (max-width: 768px) { #fullscreen-lock-btn { display: inline-block; } }
+        @media (orientation: portrait) and (max-width: 800px) { .main-container { display: none; } #orientation-overlay { display: flex; } }
     </style>
 </head>
 <body>
     <div class="main-container">
-        <div class="info-panel"></div>
+        <div class="info-panel">
+            <h1>ESP32 遊戲中心</h1>
+            <button id="fullscreen-lock-btn" class="show-on-mobile">橫向全螢幕</button>
+            <div id="score-board" style="display: none; margin-top: 1rem;">
+                <span style="margin: 0 10px;">分數: <b id="score">0</b></span>
+                <span style="margin: 0 10px;">等級: <b id="level">1</b></span>
+                <span style="margin: 0 10px;">行數: <b id="lines">0</b></span>
+            </div>
+            <p id="status">請點擊「連線」按鈕開始</p>
+        </div>
 
-        <div id="game-selection"></div>
-
+        <div id="game-selection">
+            <h2>選擇一個遊戲</h2>
+            <button class="game-btn" id="btn-select-tetris">俄羅斯方塊</button>
+            <button class="game-btn" id="btn-select-snake">貪吃蛇</button>
+        </div>
         <div class="gamepad-body" >
-            <div class="d-pad"></div>
+            <div class="d-pad">
+                <button class="button" id="btn-up" title="上 (W/↑)">▲</button>
+                <button class="button" id="btn-left" title="左 (A/←)">◄</button>
+                <button class="button" id="btn-right" title="右 (D/→)">►</button>
+                <button class="button" id="btn-down" title="下 (S/↓)">▼</button>
+            </div>
             <div class="center-controls">
                 <button class="button" id="btn-connect">連線</button>
                 <button class="button" id="btn-return">返回</button>
                 <button class="button" id="btn-pause">暫停</button>
             </div>
-            <div class="action-buttons"></div>
+            <div class="action-buttons">
+                <button class="button" id="btn-y" title="預留 (Y)">Y</button>
+                <button class="button" id="btn-x" title="加速下降 (X)">X</button>
+                <button class="button" id="btn-b" title="重新開始/返回 (B)">B</button>
+                <button class="button" id="btn-a" title="旋轉 (Space)">A</button>
+            </div>
+            </div>
+    </div>
+    <div id="orientation-overlay">
+        <div class="message">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 7.207v9.586a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7.207a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1z"/>
+                <path d="M15 4.207H9"/>
+            </svg>
+            <p>為了最佳體驗，請將您的裝置轉為橫向模式。</p>
         </div>
     </div>
-    <div id="orientation-overlay"></div>
-
     <script>
         const elements = {
-            // ...
+            status: document.getElementById('status'),
+            connectBtn: document.getElementById('btn-connect'),
             pauseBtn: document.getElementById('btn-pause'),
-            returnBtn: document.getElementById('btn-return'), // <<< 新增元素
+            returnBtn: document.getElementById('btn-return'),
             fullscreenBtn: document.getElementById('fullscreen-lock-btn'),
-            // ...
+            gamepadBody: document.querySelector('.gamepad-body'),
+            gameSelection: document.getElementById('game-selection'),
+            dPad: document.querySelector('.d-pad'),
+            actionButtons: document.querySelector('.action-buttons'),
+            scoreBoard: document.getElementById('score-board'),
+            scoreDisplay: document.getElementById('score'),
+            levelDisplay: document.getElementById('level'),
+            linesDisplay: document.getElementById('lines'),
+            buttons: {
+                up: document.getElementById('btn-up'), down: document.getElementById('btn-down'),
+                left: document.getElementById('btn-left'), right: document.getElementById('btn-right'),
+                a: document.getElementById('btn-a'), b: document.getElementById('btn-b'),
+                x: document.getElementById('btn-x'), y: document.getElementById('btn-y'),
+                selectTetris: document.getElementById('btn-select-tetris'),
+                selectSnake: document.getElementById('btn-select-snake'),
+            }
         };
+
+        const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+        const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+        const GAME_STATE_CHAR_UUID = "1e62136e-3907-4258-9ca3-a4f21a5301a2";
+        let gameCharacteristic, gameStateCharacteristic;
 
         const COMMANDS = {
             LEFT: 0x01, RIGHT: 0x02, UP: 0x03, DOWN: 0x04,
             ACTION_A: 0x05, ACTION_B: 0x06, PAUSE: 0x07,
-            RETURN_MENU: 0x0F, // <<< 新增指令
+            RETURN_MENU: 0x0F,
             SELECT_GAME: 0x10
         };
         const GAMES = { TETRIS: 0x01, SNAKE: 0x02 };
 
-        let gameCharacteristic, gameStateCharacteristic;
-
         elements.connectBtn.addEventListener('click', async () => {
             try {
-                // ... 連線邏輯不變 ...
-                elements.gamepadBody.style.display = 'none'; // 隱藏控制器
-                elements.gameSelection.style.display = 'flex'; // 顯示遊戲選擇畫面
-            } catch (error) { /* ... */ }
+                elements.status.textContent = '藍牙掃描中...';
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [SERVICE_UUID] }]
+                });
+                
+                elements.status.textContent = '正在連接至裝置...';
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                gameCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+                gameStateCharacteristic = await service.getCharacteristic(GAME_STATE_CHAR_UUID);
+                
+                await gameStateCharacteristic.startNotifications();
+                gameStateCharacteristic.addEventListener('characteristicvaluechanged', handleGameStateUpdate);
+                device.addEventListener('gattserverdisconnected', onDisconnected);
+
+                elements.status.textContent = '✅ 連接成功！請選擇一個遊戲。';
+                elements.connectBtn.style.display = 'none';
+                elements.gamepadBody.style.display = 'none';
+                elements.gameSelection.style.display = 'flex';
+            } catch (error) {
+                elements.status.textContent = `❌ 連線失敗: ${error.message.split(' GATTSERVER:')[0]}`;
+                console.error(error);
+            }
         });
 
         function onDisconnected() {
-            elements.status.textContent = '藍牙已斷線。請重新整理頁面。';
+            elements.status.textContent = '藍牙已斷線。請點擊「連線」重試。';
             elements.connectBtn.style.display = 'block';
             elements.gamepadBody.style.display = 'flex';
             elements.gameSelection.style.display = 'none';
             elements.dPad.style.display = 'none';
             elements.actionButtons.style.display = 'none';
             elements.pauseBtn.style.display = 'none';
-            elements.returnBtn.style.display = 'none'; // <<< 斷線時隱藏
+            elements.returnBtn.style.display = 'none';
             elements.scoreBoard.style.display = 'none';
         }
         
-        async function sendCommand(command, value = null) { /* ... 內容不變 ... */ }
+        async function sendCommand(command, value = null) {
+            if (!gameCharacteristic) return;
+            try {
+                let data = (value !== null) ? new Uint8Array([command, value]) : new Uint8Array([command]);
+                await gameCharacteristic.writeValueWithoutResponse(data);
+            } catch (error) { console.error('指令發送失敗:', error); }
+        }
 
         elements.buttons.selectTetris.addEventListener('click', () => selectGame(GAMES.TETRIS));
         elements.buttons.selectSnake.addEventListener('click', () => selectGame(GAMES.SNAKE));
@@ -144,53 +222,99 @@
             elements.gameSelection.style.display = 'none';
             elements.gamepadBody.style.display = 'flex';
             elements.scoreBoard.style.display = 'block';
+            
+            // 恢復俄羅斯方塊的按鈕結構
+            elements.actionButtons.innerHTML = `
+                <button class="button" id="btn-y" title="預留 (Y)">Y</button>
+                <button class="button" id="btn-x" title="加速下降 (X)">X</button>
+                <button class="button" id="btn-b" title="重新開始/返回 (B)">B</button>
+                <button class="button" id="btn-a" title="旋轉 (Space)">A</button>`;
+            
+            // 更新 elements.buttons 物件的引用
+            elements.buttons.a = document.getElementById('btn-a');
+            elements.buttons.b = document.getElementById('btn-b');
+            elements.buttons.x = document.getElementById('btn-x');
+            elements.buttons.y = document.getElementById('btn-y');
+            
+            // 重新綁定事件
+            elements.buttons.a.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.ACTION_A); });
+            elements.buttons.b.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.ACTION_B); });
+            elements.buttons.x.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); });
+
 
             if (gameId === GAMES.TETRIS) {
                 elements.dPad.style.display = 'block';
                 elements.actionButtons.style.display = 'block';
                 elements.pauseBtn.style.display = 'block';
-                elements.returnBtn.style.display = 'block'; // <<< 為俄羅斯方塊顯示返回按鈕
+                elements.returnBtn.style.display = 'block';
                 
-                elements.buttons.b.title = "重新開始 (B)"; // <<< 確保 B 鈕提示為 "重新開始"
-                // ... 其他提示文字不變 ...
+                elements.buttons.b.title = "重新開始 (B)";
+                elements.buttons.up.title = "瞬降 (W/↑)";
+                elements.buttons.down.title = "緩降 (S/↓)";
 
             } else if (gameId === GAMES.SNAKE) {
                 elements.dPad.style.display = 'block';
                 elements.pauseBtn.style.display = 'block';
-                elements.returnBtn.style.display = 'none'; // <<< 為貪吃蛇隱藏此按鈕
+                elements.returnBtn.style.display = 'none';
                 
-                // 貪吃蛇的紅色按鈕維持原樣 (發送 ACTION_B)
                 elements.actionButtons.innerHTML = '';
                 const snakeReturnBtn = document.createElement('button');
                 snakeReturnBtn.className = 'button';
                 snakeReturnBtn.textContent = '返回';
                 snakeReturnBtn.style.cssText = `background-color:var(--red); color:white; width:55px; height:55px; border-radius:50%; position:absolute; bottom:0; left:47.5px;`;
-                snakeReturnBtn.addEventListener('pointerdown', () => sendCommand(COMMANDS.ACTION_B)); // 貪吃蛇的返回鈕仍發送 ACTION_B
+                snakeReturnBtn.addEventListener('pointerdown', () => sendCommand(COMMANDS.ACTION_B));
                 elements.actionButtons.appendChild(snakeReturnBtn);
                 elements.actionButtons.style.display = 'block';
             }
         }
         
-        // --- 事件綁定 ---
-        elements.returnBtn.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.RETURN_MENU); }); // <<< 為新按鈕綁定新指令
-        // ... 其他按鈕的事件綁定不變 ...
+        // --- 靜態按鈕事件綁定 ---
+        elements.returnBtn.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.RETURN_MENU); });
+        elements.pauseBtn.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.PAUSE); });
+        elements.buttons.up.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.UP); });
+        elements.buttons.down.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); });
+        elements.buttons.left.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.LEFT); });
+        elements.buttons.right.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.RIGHT); });
+
+
+        const keyMap = { /* ... */ };
+        function updateButtonHighlight(key, add) { /* ... */ }
+        window.addEventListener('keydown', e => { /* ... */ });
+        window.addEventListener('keyup', e => { /* ... */ });
 
         function handleGameStateUpdate(event) {
-            // ...
+            const value = event.target.value;
+            const decoder = new TextDecoder('utf-8');
+            const stateString = decoder.decode(value);
+            const [score, level, lines] = stateString.split(',');
+            
             if (score === 'MENU') {
                 elements.gamepadBody.style.display = 'none';
                 elements.scoreBoard.style.display = 'none';
                 elements.gameSelection.style.display = 'flex';
                 elements.status.textContent = '✅ 請選擇一個遊戲。';
-                // 隱藏所有遊戲中按鈕
                 elements.returnBtn.style.display = 'none';
                 elements.pauseBtn.style.display = 'none';
                 return; 
             }
-            // ... 分數更新邏輯不變 ...
+            
+            elements.scoreDisplay.textContent = score;
+            elements.levelDisplay.textContent = level;
+            const linesSpan = elements.linesDisplay.parentNode;
+            if (lines === '-') {
+                linesSpan.style.display = 'none';
+            } else {
+                linesSpan.style.display = 'inline';
+                elements.linesDisplay.textContent = lines;
+            }
         }
 
-        // ... 剩餘 Script 不變 ...
+        // 全螢幕和螢幕鎖定
+        if ('orientation' in screen && 'lock' in screen.orientation) {
+            elements.fullscreenBtn.addEventListener('click', () => { /* ... */ });
+        } else {
+            elements.fullscreenBtn.style.display = 'none';
+        }
     </script>
 </body>
 </html>
