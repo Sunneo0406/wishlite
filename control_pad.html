@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ESP32 遊戲中心</title>
+    <title>ESP32 遊戲中心 (除錯版)</title>
     <style>
         :root {
             --gamepad-bg: #404040; --button-bg: #2c2c2c; --text-color: #e0e0e0;
@@ -44,9 +44,6 @@
             font-size: 1.2em; font-weight: bold; border-radius: 10px; cursor: pointer;
             width: 200px; box-shadow: 0 5px 8px rgba(0,0,0,0.25); transition: all 0.1s ease-out;
         }
-        .game-btn:hover { background: #1579c9; }
-        .game-btn:active { transform: translateY(2px) scale(0.98); }
-
         .button {
             border: none; cursor: pointer;
             box-shadow: 0 5px 8px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.2);
@@ -59,54 +56,37 @@
         .d-pad, .action-buttons, #btn-pause, #btn-return { display: none; } /* 預設都隱藏 */
         .d-pad { position: relative; width: 150px; height: 150px; }
         .d-pad .button { position: absolute; width: 50px; height: 50px; background-color: var(--button-bg); color: #999; font-size: 28px; line-height: 50px; text-align: center; }
-        #btn-up { top: 0; left: 50px; border-radius: 8px 8px 0 0; }
-        #btn-down { bottom: 0; left: 50px; border-radius: 0 0 8px 8px; }
-        #btn-left { top: 50px; left: 0; border-radius: 8px 0 0 8px; }
-        #btn-right { top: 50px; right: 0; border-radius: 0 8px 8px 0; }
-        .d-pad::after { content: ''; position: absolute; top: 50px; left: 50px; width: 50px; height: 50px; background: #333; box-shadow: inset 0 3px 5px rgba(0,0,0,0.4); }
+        #btn-up { top: 0; left: 50px; } #btn-down { bottom: 0; left: 50px; }
+        #btn-left { top: 50px; left: 0; } #btn-right { top: 50px; right: 0; }
         .center-controls { display: flex; flex-direction: row; gap: 15px; align-items: center;}
         .center-controls .button { width: 80px; height: 30px; border-radius: 15px; background-color: #222; color: var(--text-color); font-size: 14px; font-weight: bold; }
         #btn-connect { background: var(--blue); }
-        #btn-return { background-color: var(--red); } /* 返回按鈕為紅色 */
+        #btn-return { background-color: var(--red); }
         .action-buttons { position: relative; width: 150px; height: 150px; }
         .action-buttons .button { position: absolute; width: 55px; height: 55px; border-radius: 50%; color: white; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
         #btn-y { top: 0; left: 47.5px; background-color: var(--yellow); color: #555; }
         #btn-b { bottom: 0; left: 47.5px; background-color: var(--red); }
         #btn-x { top: 47.5px; left: 0; background-color: var(--blue); }
         #btn-a { top: 47.5px; right: 0; background-color: var(--green); }
-        #fullscreen-lock-btn { display: none; margin-bottom: 1rem; padding: 8px 16px; font-size: 1em; font-weight: bold; color: white; background-color: #0275d8; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
-        #orientation-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #212121; z-index: 9999; display: none; justify-content: center; align-items: center; text-align: center; color: #fff; }
-        #orientation-overlay .message { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
-        #orientation-overlay p { font-size: 1.2rem; line-height: 1.5; }
-        @media (max-width: 768px) { #fullscreen-lock-btn { display: inline-block; } }
-        @media (orientation: portrait) and (max-width: 800px) { .main-container { display: none; } #orientation-overlay { display: flex; } }
     </style>
 </head>
 <body>
     <div class="main-container">
         <div class="info-panel">
             <h1>ESP32 遊戲中心</h1>
-            <button id="fullscreen-lock-btn" class="show-on-mobile">橫向全螢幕</button>
-            <div id="score-board" style="display: none; margin-top: 1rem;">
-                <span style="margin: 0 10px;">分數: <b id="score">0</b></span>
-                <span style="margin: 0 10px;">等級: <b id="level">1</b></span>
-                <span style="margin: 0 10px;">行數: <b id="lines">0</b></span>
-            </div>
             <p id="status">請點擊「連線」按鈕開始</p>
         </div>
-
         <div id="game-selection">
             <h2>選擇一個遊戲</h2>
             <button class="game-btn" id="btn-select-tetris">俄羅斯方塊</button>
             <button class="game-btn" id="btn-select-snake">貪吃蛇</button>
         </div>
-
         <div class="gamepad-body" >
             <div class="d-pad">
-                <button class="button" id="btn-up" title="上 (W/↑)">▲</button>
-                <button class="button" id="btn-left" title="左 (A/←)">◄</button>
-                <button class="button" id="btn-right" title="右 (D/→)">►</button>
-                <button class="button" id="btn-down" title="下 (S/↓)">▼</button>
+                <button class="button" id="btn-up" title="上">▲</button>
+                <button class="button" id="btn-left" title="左">◄</button>
+                <button class="button" id="btn-right" title="右">►</button>
+                <button class="button" id="btn-down" title="下">▼</button>
             </div>
             <div class="center-controls">
                 <button class="button" id="btn-connect">連線</button>
@@ -114,53 +94,36 @@
                 <button class="button" id="btn-pause">暫停</button>
             </div>
             <div class="action-buttons">
-                <button class="button" id="btn-y" title="預留 (Y)">Y</button>
-                <button class="button" id="btn-x" title="加速下降 (X)">X</button>
-                <button class="button" id="btn-b" title="重新開始 (B)">B</button>
-                <button class="button" id="btn-a" title="旋轉 (Space)">A</button>
+                <button class="button" id="btn-y" title="Y">Y</button>
+                <button class="button" id="btn-x" title="X">X</button>
+                <button class="button" id="btn-b" title="B">B</button>
+                <button class="button" id="btn-a" title="A">A</button>
             </div>
         </div>
     </div>
-    <div id="orientation-overlay">
-        <div class="message">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 7.207v9.586a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7.207a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1z"/>
-                <path d="M15 4.207H9"/>
-            </svg>
-            <p>為了最佳體驗，請將您的裝置轉為橫向模式。</p>
-        </div>
-    </div>
-
     <script>
         const elements = {
             status: document.getElementById('status'),
             connectBtn: document.getElementById('btn-connect'),
             pauseBtn: document.getElementById('btn-pause'),
             returnBtn: document.getElementById('btn-return'),
-            fullscreenBtn: document.getElementById('fullscreen-lock-btn'),
             gamepadBody: document.querySelector('.gamepad-body'),
             gameSelection: document.getElementById('game-selection'),
             dPad: document.querySelector('.d-pad'),
             actionButtons: document.querySelector('.action-buttons'),
-            scoreBoard: document.getElementById('score-board'),
-            scoreDisplay: document.getElementById('score'),
-            levelDisplay: document.getElementById('level'),
-            linesDisplay: document.getElementById('lines'),
             buttons: {
-                up: document.getElementById('btn-up'), down: document.getElementById('btn-down'),
-                left: document.getElementById('btn-left'), right: document.getElementById('btn-right'),
-                a: document.getElementById('btn-a'), b: document.getElementById('btn-b'),
-                x: document.getElementById('btn-x'), y: document.getElementById('btn-y'),
                 selectTetris: document.getElementById('btn-select-tetris'),
                 selectSnake: document.getElementById('btn-select-snake'),
+                // Action buttons (A,B,X,Y) are now static, no need to re-find
+                a: document.getElementById('btn-a'), b: document.getElementById('btn-b'),
+                x: document.getElementById('btn-x'), y: document.getElementById('btn-y'),
             }
         };
 
         const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
         const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
-        const GAME_STATE_CHAR_UUID = "1e62136e-3907-4258-9ca3-a4f21a5301a2";
-        let gameCharacteristic, gameStateCharacteristic;
-        let commandCooldown = false; // <<< 新增冷卻標記
+        let gameCharacteristic;
+        let commandCooldown = false;
 
         const COMMANDS = {
             LEFT: 0x01, RIGHT: 0x02, UP: 0x03, DOWN: 0x04,
@@ -170,105 +133,90 @@
         };
         const GAMES = { TETRIS: 0x01, SNAKE: 0x02 };
 
-        elements.connectBtn.addEventListener('click', async () => { /* ... 內容不變 ... */ });
-        function onDisconnected() { /* ... 內容不變 ... */ }
-        
-        // vvvvvvvvvv 【已修正】 vvvvvvvvvv
-        // 新增了防抖/冷卻機制
-        async function sendCommand(command, value = null) {
-            if (!gameCharacteristic || commandCooldown) return; // 如果在冷卻中，則不發送指令
+        elements.connectBtn.addEventListener('click', async () => {
+            try {
+                elements.status.textContent = '藍牙掃描中...';
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [{ services: [SERVICE_UUID] }] }]
+                });
+                
+                elements.status.textContent = '正在連接至裝置...';
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                gameCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+                
+                device.addEventListener('gattserverdisconnected', onDisconnected);
 
-            commandCooldown = true; // 進入冷卻狀態
-            setTimeout(() => { commandCooldown = false; }, 300); // 300毫秒後解除冷卻
+                elements.status.textContent = '✅ 連接成功！請選擇一個遊戲。';
+                elements.connectBtn.style.display = 'none';
+                elements.gamepadBody.style.display = 'none';
+                elements.gameSelection.style.display = 'flex';
+            } catch (error) {
+                elements.status.textContent = `❌ 連線失敗: ${error.message.split(' GATTSERVER:')[0]}`;
+                console.error(error);
+            }
+        });
+
+        function onDisconnected() {
+            elements.status.textContent = '藍牙已斷線。';
+            elements.connectBtn.style.display = 'block';
+            elements.gamepadBody.style.display = 'flex';
+            elements.gameSelection.style.display = 'none';
+            elements.dPad.style.display = 'none';
+            elements.actionButtons.style.display = 'none';
+            elements.pauseBtn.style.display = 'none';
+            elements.returnBtn.style.display = 'none';
+        }
+        
+        async function sendCommand(command, value = null) {
+            if (!gameCharacteristic || commandCooldown) return;
+            commandCooldown = true;
+            setTimeout(() => { commandCooldown = false; }, 200);
 
             try {
                 let data = (value !== null) ? new Uint8Array([command, value]) : new Uint8Array([command]);
                 await gameCharacteristic.writeValueWithoutResponse(data);
             } catch (error) { 
                 console.error('指令發送失敗:', error);
-                commandCooldown = false; // 發送失敗時立即解除冷卻
+                commandCooldown = false;
             }
         }
-        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
         elements.buttons.selectTetris.addEventListener('click', () => selectGame(GAMES.TETRIS));
         elements.buttons.selectSnake.addEventListener('click', () => selectGame(GAMES.SNAKE));
         
-        // vvvvvvvvvv 【已修正】 vvvvvvvvvv
-        // 重構 selectGame 函式以解決按鈕消失問題
+        // vvvvvvvvvv 【除錯用簡化邏輯】 vvvvvvvvvv
         function selectGame(gameId) {
             sendCommand(COMMANDS.SELECT_GAME, gameId);
             elements.gameSelection.style.display = 'none';
             elements.gamepadBody.style.display = 'flex';
-            elements.scoreBoard.style.display = 'block';
-            
-            // 每次都重新繪製俄羅斯方塊的按鈕，確保它們存在
-            elements.actionButtons.innerHTML = `
-                <button class="button" id="btn-y" title="預留 (Y)">Y</button>
-                <button class="button" id="btn-x" title="加速下降 (X)">X</button>
-                <button class="button" id="btn-b" title="重新開始 (B)">B</button>
-                <button class="button" id="btn-a" title="旋轉 (Space)">A</button>`;
-            
-            // 更新 elements.buttons 的 DOM 引用，非常重要！
-            elements.buttons.a = document.getElementById('btn-a');
-            elements.buttons.b = document.getElementById('btn-b');
-            elements.buttons.x = document.getElementById('btn-x');
-            elements.buttons.y = document.getElementById('btn-y');
-            
-            // 為新建立的按鈕重新綁定事件
-            elements.buttons.a.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.ACTION_A); });
-            elements.buttons.b.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.ACTION_B); });
-            elements.buttons.x.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); });
-
 
             if (gameId === GAMES.TETRIS) {
                 elements.dPad.style.display = 'block';
-                elements.actionButtons.style.display = 'block';
+                elements.actionButtons.style.display = 'block'; // 顯示包含A,B,X,Y的區塊
                 elements.pauseBtn.style.display = 'block';
                 elements.returnBtn.style.display = 'block';
-                
-                elements.buttons.b.title = "重新開始 (B)";
-                elements.buttons.up.title = "瞬降 (W/↑)";
-                elements.buttons.down.title = "緩降 (S/↓)";
-
             } else if (gameId === GAMES.SNAKE) {
                 elements.dPad.style.display = 'block';
+                elements.actionButtons.style.display = 'none'; // 隱藏包含A,B,X,Y的區塊
                 elements.pauseBtn.style.display = 'block';
                 elements.returnBtn.style.display = 'none';
-                
-                // 貪吃蛇模式下，清空並只顯示一個返回按鈕
-                elements.actionButtons.innerHTML = '';
-                const snakeReturnBtn = document.createElement('button');
-                snakeReturnBtn.className = 'button';
-                snakeReturnBtn.textContent = '返回';
-                snakeReturnBtn.style.cssText = `background-color:var(--red); color:white; width:55px; height:55px; border-radius:50%; position:absolute; bottom:0; left:47.5px;`;
-                snakeReturnBtn.addEventListener('pointerdown', () => sendCommand(COMMANDS.ACTION_B));
-                elements.actionButtons.appendChild(snakeReturnBtn);
-                elements.actionButtons.style.display = 'block';
+                // 這裡我們暫時不處理貪吃蛇的獨立返回按鈕，以簡化測試
             }
         }
-        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        
-        // --- 靜態按鈕事件綁定 ---
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        // --- 事件綁定 ---
         elements.returnBtn.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.RETURN_MENU); });
         elements.pauseBtn.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.PAUSE); });
-        elements.buttons.up.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.UP); });
-        elements.buttons.down.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); });
-        elements.buttons.left.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.LEFT); });
-        elements.buttons.right.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.RIGHT); });
+        document.getElementById('btn-up').addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.UP); });
+        document.getElementById('btn-down').addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); });
+        document.getElementById('btn-left').addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.LEFT); });
+        document.getElementById('btn-right').addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.RIGHT); });
+        elements.buttons.a.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.ACTION_A); });
+        elements.buttons.b.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.ACTION_B); });
+        elements.buttons.x.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); });
 
-
-        const keyMap = { /* ... 內容不變 ... */ };
-        function updateButtonHighlight(key, add) { /* ... 內容不變 ... */ }
-        window.addEventListener('keydown', e => { /* ... 內容不變 ... */ });
-        window.addEventListener('keyup', e => { /* ... 內容不變 ... */ });
-
-        function handleGameStateUpdate(event) { /* ... 內容不變 ... */ }
-
-        // 全螢幕和螢幕鎖定
-        if ('orientation' in screen && 'lock' in screen.orientation) {
-            elements.fullscreenBtn.addEventListener('click', () => { /* ... */ });
-        } else { /* ... */ }
     </script>
 </body>
 </html>
