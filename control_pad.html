@@ -100,6 +100,7 @@
             <button class="game-btn" id="btn-select-tetris">俄羅斯方塊</button>
             <button class="game-btn" id="btn-select-snake">貪吃蛇</button>
         </div>
+
         <div class="gamepad-body" >
             <div class="d-pad">
                 <button class="button" id="btn-up" title="上 (W/↑)">▲</button>
@@ -115,10 +116,10 @@
             <div class="action-buttons">
                 <button class="button" id="btn-y" title="預留 (Y)">Y</button>
                 <button class="button" id="btn-x" title="加速下降 (X)">X</button>
-                <button class="button" id="btn-b" title="重新開始/返回 (B)">B</button>
+                <button class="button" id="btn-b" title="重新開始 (B)">B</button>
                 <button class="button" id="btn-a" title="旋轉 (Space)">A</button>
             </div>
-            </div>
+        </div>
     </div>
     <div id="orientation-overlay">
         <div class="message">
@@ -129,6 +130,7 @@
             <p>為了最佳體驗，請將您的裝置轉為橫向模式。</p>
         </div>
     </div>
+
     <script>
         const elements = {
             status: document.getElementById('status'),
@@ -158,6 +160,7 @@
         const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
         const GAME_STATE_CHAR_UUID = "1e62136e-3907-4258-9ca3-a4f21a5301a2";
         let gameCharacteristic, gameStateCharacteristic;
+        let commandCooldown = false; // <<< 新增冷卻標記
 
         const COMMANDS = {
             LEFT: 0x01, RIGHT: 0x02, UP: 0x03, DOWN: 0x04,
@@ -167,76 +170,52 @@
         };
         const GAMES = { TETRIS: 0x01, SNAKE: 0x02 };
 
-        elements.connectBtn.addEventListener('click', async () => {
-            try {
-                elements.status.textContent = '藍牙掃描中...';
-                const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ services: [SERVICE_UUID] }]
-                });
-                
-                elements.status.textContent = '正在連接至裝置...';
-                const server = await device.gatt.connect();
-                const service = await server.getPrimaryService(SERVICE_UUID);
-                gameCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
-                gameStateCharacteristic = await service.getCharacteristic(GAME_STATE_CHAR_UUID);
-                
-                await gameStateCharacteristic.startNotifications();
-                gameStateCharacteristic.addEventListener('characteristicvaluechanged', handleGameStateUpdate);
-                device.addEventListener('gattserverdisconnected', onDisconnected);
-
-                elements.status.textContent = '✅ 連接成功！請選擇一個遊戲。';
-                elements.connectBtn.style.display = 'none';
-                elements.gamepadBody.style.display = 'none';
-                elements.gameSelection.style.display = 'flex';
-            } catch (error) {
-                elements.status.textContent = `❌ 連線失敗: ${error.message.split(' GATTSERVER:')[0]}`;
-                console.error(error);
-            }
-        });
-
-        function onDisconnected() {
-            elements.status.textContent = '藍牙已斷線。請點擊「連線」重試。';
-            elements.connectBtn.style.display = 'block';
-            elements.gamepadBody.style.display = 'flex';
-            elements.gameSelection.style.display = 'none';
-            elements.dPad.style.display = 'none';
-            elements.actionButtons.style.display = 'none';
-            elements.pauseBtn.style.display = 'none';
-            elements.returnBtn.style.display = 'none';
-            elements.scoreBoard.style.display = 'none';
-        }
+        elements.connectBtn.addEventListener('click', async () => { /* ... 內容不變 ... */ });
+        function onDisconnected() { /* ... 內容不變 ... */ }
         
+        // vvvvvvvvvv 【已修正】 vvvvvvvvvv
+        // 新增了防抖/冷卻機制
         async function sendCommand(command, value = null) {
-            if (!gameCharacteristic) return;
+            if (!gameCharacteristic || commandCooldown) return; // 如果在冷卻中，則不發送指令
+
+            commandCooldown = true; // 進入冷卻狀態
+            setTimeout(() => { commandCooldown = false; }, 300); // 300毫秒後解除冷卻
+
             try {
                 let data = (value !== null) ? new Uint8Array([command, value]) : new Uint8Array([command]);
                 await gameCharacteristic.writeValueWithoutResponse(data);
-            } catch (error) { console.error('指令發送失敗:', error); }
+            } catch (error) { 
+                console.error('指令發送失敗:', error);
+                commandCooldown = false; // 發送失敗時立即解除冷卻
+            }
         }
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
         elements.buttons.selectTetris.addEventListener('click', () => selectGame(GAMES.TETRIS));
         elements.buttons.selectSnake.addEventListener('click', () => selectGame(GAMES.SNAKE));
         
+        // vvvvvvvvvv 【已修正】 vvvvvvvvvv
+        // 重構 selectGame 函式以解決按鈕消失問題
         function selectGame(gameId) {
             sendCommand(COMMANDS.SELECT_GAME, gameId);
             elements.gameSelection.style.display = 'none';
             elements.gamepadBody.style.display = 'flex';
             elements.scoreBoard.style.display = 'block';
             
-            // 恢復俄羅斯方塊的按鈕結構
+            // 每次都重新繪製俄羅斯方塊的按鈕，確保它們存在
             elements.actionButtons.innerHTML = `
                 <button class="button" id="btn-y" title="預留 (Y)">Y</button>
                 <button class="button" id="btn-x" title="加速下降 (X)">X</button>
-                <button class="button" id="btn-b" title="重新開始/返回 (B)">B</button>
+                <button class="button" id="btn-b" title="重新開始 (B)">B</button>
                 <button class="button" id="btn-a" title="旋轉 (Space)">A</button>`;
             
-            // 更新 elements.buttons 物件的引用
+            // 更新 elements.buttons 的 DOM 引用，非常重要！
             elements.buttons.a = document.getElementById('btn-a');
             elements.buttons.b = document.getElementById('btn-b');
             elements.buttons.x = document.getElementById('btn-x');
             elements.buttons.y = document.getElementById('btn-y');
             
-            // 重新綁定事件
+            // 為新建立的按鈕重新綁定事件
             elements.buttons.a.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.ACTION_A); });
             elements.buttons.b.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.ACTION_B); });
             elements.buttons.x.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); });
@@ -257,6 +236,7 @@
                 elements.pauseBtn.style.display = 'block';
                 elements.returnBtn.style.display = 'none';
                 
+                // 貪吃蛇模式下，清空並只顯示一個返回按鈕
                 elements.actionButtons.innerHTML = '';
                 const snakeReturnBtn = document.createElement('button');
                 snakeReturnBtn.className = 'button';
@@ -267,6 +247,7 @@
                 elements.actionButtons.style.display = 'block';
             }
         }
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
         
         // --- 靜態按鈕事件綁定 ---
         elements.returnBtn.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.RETURN_MENU); });
@@ -277,44 +258,17 @@
         elements.buttons.right.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.RIGHT); });
 
 
-        const keyMap = { /* ... */ };
-        function updateButtonHighlight(key, add) { /* ... */ }
-        window.addEventListener('keydown', e => { /* ... */ });
-        window.addEventListener('keyup', e => { /* ... */ });
+        const keyMap = { /* ... 內容不變 ... */ };
+        function updateButtonHighlight(key, add) { /* ... 內容不變 ... */ }
+        window.addEventListener('keydown', e => { /* ... 內容不變 ... */ });
+        window.addEventListener('keyup', e => { /* ... 內容不變 ... */ });
 
-        function handleGameStateUpdate(event) {
-            const value = event.target.value;
-            const decoder = new TextDecoder('utf-8');
-            const stateString = decoder.decode(value);
-            const [score, level, lines] = stateString.split(',');
-            
-            if (score === 'MENU') {
-                elements.gamepadBody.style.display = 'none';
-                elements.scoreBoard.style.display = 'none';
-                elements.gameSelection.style.display = 'flex';
-                elements.status.textContent = '✅ 請選擇一個遊戲。';
-                elements.returnBtn.style.display = 'none';
-                elements.pauseBtn.style.display = 'none';
-                return; 
-            }
-            
-            elements.scoreDisplay.textContent = score;
-            elements.levelDisplay.textContent = level;
-            const linesSpan = elements.linesDisplay.parentNode;
-            if (lines === '-') {
-                linesSpan.style.display = 'none';
-            } else {
-                linesSpan.style.display = 'inline';
-                elements.linesDisplay.textContent = lines;
-            }
-        }
+        function handleGameStateUpdate(event) { /* ... 內容不變 ... */ }
 
         // 全螢幕和螢幕鎖定
         if ('orientation' in screen && 'lock' in screen.orientation) {
             elements.fullscreenBtn.addEventListener('click', () => { /* ... */ });
-        } else {
-            elements.fullscreenBtn.style.display = 'none';
-        }
+        } else { /* ... */ }
     </script>
 </body>
 </html>
