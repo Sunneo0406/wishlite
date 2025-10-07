@@ -53,7 +53,7 @@
             transform: translateY(2px) scale(0.98);
             box-shadow: 0 2px 4px rgba(0,0,0,0.3), inset 0 2px 3px rgba(0,0,0,0.3);
         }
-        .d-pad, .action-buttons, #btn-pause, #btn-return { display: none; } /* 預設都隱藏 */
+        .d-pad, .action-buttons, #btn-pause, #btn-return { display: none; }
         .d-pad { position: relative; width: 150px; height: 150px; }
         .d-pad .button { position: absolute; width: 50px; height: 50px; background-color: var(--button-bg); color: #999; font-size: 28px; line-height: 50px; text-align: center; }
         #btn-up { top: 0; left: 50px; border-radius: 8px 8px 0 0; }
@@ -71,23 +71,26 @@
         #btn-b { bottom: 0; left: 47.5px; background-color: var(--red); }
         #btn-x { top: 47.5px; left: 0; background-color: var(--blue); }
         #btn-a { top: 47.5px; right: 0; background-color: var(--green); }
-        #fullscreen-lock-btn { display: none; margin-bottom: 1rem; padding: 8px 16px; font-size: 1em; }
-        #orientation-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #212121; z-index: 9999; display: none; justify-content: center; align-items: center; text-align: center; }
-        @media (max-width: 768px) { #fullscreen-lock-btn { display: inline-block; } }
-        @media (orientation: portrait) and (max-width: 800px) { .main-container { display: none; } #orientation-overlay { display: flex; } }
     </style>
 </head>
 <body>
     <div class="main-container">
         <div class="info-panel">
             <h1>ESP32 遊戲中心</h1>
+            <div id="score-board" style="display: none; margin-top: 1rem;">
+                <span style="margin: 0 10px;">分數: <b id="score">0</b></span>
+                <span style="margin: 0 10px;">等級: <b id="level">1</b></span>
+                <span style="margin: 0 10px;">行數: <b id="lines">0</b></span>
+            </div>
             <p id="status">請點擊「連線」按鈕開始</p>
         </div>
+
         <div id="game-selection">
             <h2>選擇一個遊戲</h2>
             <button class="game-btn" id="btn-select-tetris">俄羅斯方塊</button>
             <button class="game-btn" id="btn-select-snake">貪吃蛇</button>
         </div>
+
         <div class="gamepad-body" >
             <div class="d-pad">
                 <button class="button" id="btn-up" title="上 (W/↑)">▲</button>
@@ -108,6 +111,7 @@
             </div>
         </div>
     </div>
+
     <script>
         const elements = {
             status: document.getElementById('status'),
@@ -118,6 +122,10 @@
             gameSelection: document.getElementById('game-selection'),
             dPad: document.querySelector('.d-pad'),
             actionButtons: document.querySelector('.action-buttons'),
+            scoreBoard: document.getElementById('score-board'),
+            scoreDisplay: document.getElementById('score'),
+            levelDisplay: document.getElementById('level'),
+            linesDisplay: document.getElementById('lines'),
             buttons: {
                 up: document.getElementById('btn-up'), down: document.getElementById('btn-down'),
                 left: document.getElementById('btn-left'), right: document.getElementById('btn-right'),
@@ -130,8 +138,8 @@
 
         const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
         const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
-        // GAME_STATE_CHAR_UUID is only used on ESP32 side, so we can remove it here.
-        let gameCharacteristic;
+        const GAME_STATE_CHAR_UUID = "1e62136e-3907-4258-9ca3-a4f21a5301a2";
+        let gameCharacteristic, gameStateCharacteristic;
         let commandCooldown = false;
 
         const COMMANDS = {
@@ -145,17 +153,22 @@
         elements.connectBtn.addEventListener('click', async () => {
             try {
                 elements.status.textContent = '藍牙掃描中...';
-                // vvvvvvvvvv 【已修正】 vvvvvvvvvv
                 const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ services: [SERVICE_UUID] }] // 修正了多餘的括號
+                    filters: [{ services: [SERVICE_UUID] }]
                 });
-                // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                 
                 elements.status.textContent = '正在連接至裝置...';
                 const server = await device.gatt.connect();
                 const service = await server.getPrimaryService(SERVICE_UUID);
                 gameCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
                 
+                // vvvvvvvvvv 【已還原】 vvvvvvvvvv
+                // 取得用於接收 ESP32 狀態更新的特徵
+                gameStateCharacteristic = await service.getCharacteristic(GAME_STATE_CHAR_UUID);
+                await gameStateCharacteristic.startNotifications();
+                gameStateCharacteristic.addEventListener('characteristicvaluechanged', handleGameStateUpdate);
+                // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
                 device.addEventListener('gattserverdisconnected', onDisconnected);
 
                 elements.status.textContent = '✅ 連接成功！請選擇一個遊戲。';
@@ -177,6 +190,7 @@
             elements.actionButtons.style.display = 'none';
             elements.pauseBtn.style.display = 'none';
             elements.returnBtn.style.display = 'none';
+            elements.scoreBoard.style.display = 'none';
         }
         
         async function sendCommand(command, value = null) {
@@ -200,6 +214,7 @@
             sendCommand(COMMANDS.SELECT_GAME, gameId);
             elements.gameSelection.style.display = 'none';
             elements.gamepadBody.style.display = 'flex';
+            elements.scoreBoard.style.display = 'block';
             
             elements.actionButtons.innerHTML = `
                 <button class="button" id="btn-y" title="預留 (Y)">Y</button>
@@ -238,12 +253,43 @@
             }
         }
         
+        // --- 靜態按鈕事件綁定 ---
         elements.returnBtn.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.RETURN_MENU); });
         elements.pauseBtn.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.PAUSE); });
-        document.getElementById('btn-up').addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.UP); });
-        document.getElementById('btn-down').addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); });
-        document.getElementById('btn-left').addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.LEFT); });
-        document.getElementById('btn-right').addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.RIGHT); });
+        elements.buttons.up.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.UP); });
+        elements.buttons.down.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); });
+        elements.buttons.left.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.LEFT); });
+        elements.buttons.right.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.RIGHT); });
+
+        // vvvvvvvvvv 【已還原】 vvvvvvvvvv
+        // 用於接收 ESP32 狀態更新的函式
+        function handleGameStateUpdate(event) {
+            const value = event.target.value;
+            const decoder = new TextDecoder('utf-8');
+            const stateString = decoder.decode(value);
+            const [score, level, lines] = stateString.split(',');
+            
+            if (score === 'MENU') {
+                elements.gamepadBody.style.display = 'none';
+                elements.scoreBoard.style.display = 'none';
+                elements.gameSelection.style.display = 'flex';
+                elements.status.textContent = '✅ 請選擇一個遊戲。';
+                elements.returnBtn.style.display = 'none';
+                elements.pauseBtn.style.display = 'none';
+                return; 
+            }
+            
+            elements.scoreDisplay.textContent = score;
+            elements.levelDisplay.textContent = level;
+            const linesSpan = elements.linesDisplay.parentNode;
+            if (lines === '-') {
+                linesSpan.style.display = 'none';
+            } else {
+                linesSpan.style.display = 'inline';
+                elements.linesDisplay.textContent = lines;
+            }
+        }
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     </script>
 </body>
 </html>
