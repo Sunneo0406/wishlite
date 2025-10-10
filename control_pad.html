@@ -89,7 +89,8 @@
             <h2>選擇一個遊戲</h2>
             <button class="game-btn" id="btn-select-tetris">俄羅斯方塊</button>
             <button class="game-btn" id="btn-select-snake">貪吃蛇</button>
-            <button class="game-btn" id="btn-select-dino">小恐龍跳躍</button> </div>
+            <button class="game-btn" id="btn-select-dino">小恐龍跳躍</button>
+        </div>
 
         <div class="gamepad-body" >
             <div class="d-pad">
@@ -105,9 +106,9 @@
             </div>
             <div class="action-buttons">
                 <button class="button" id="btn-y" title="預留 (Y)">Y</button>
-                <button class="button" id="btn-x" title="加速下降 (X)">X</button>
+                <button class="button" id="btn-x" title="預留 (X)">X</button>
                 <button class="button" id="btn-b" title="重新開始 (B)">B</button>
-                <button class="button" id="btn-a" title="旋轉 (Space)">A</button>
+                <button class="button" id="btn-a" title="主要動作">A</button>
             </div>
         </div>
     </div>
@@ -133,7 +134,7 @@
                 x: document.getElementById('btn-x'), y: document.getElementById('btn-y'),
                 selectTetris: document.getElementById('btn-select-tetris'),
                 selectSnake: document.getElementById('btn-select-snake'),
-                selectDino: document.getElementById('btn-select-dino'), // <<< [新增] 取得按鈕元素
+                selectDino: document.getElementById('btn-select-dino'),
             }
         };
 
@@ -149,7 +150,7 @@
             RETURN_MENU: 0x0F,
             SELECT_GAME: 0x10
         };
-        const GAMES = { TETRIS: 0x01, SNAKE: 0x02, DINO: 0x03 }; // <<< [新增] 新增遊戲ID
+        const GAMES = { TETRIS: 0x01, SNAKE: 0x02, DINO: 0x03 };
 
         elements.connectBtn.addEventListener('click', async () => {
             try {
@@ -194,7 +195,7 @@
         async function sendCommand(command, value = null) {
             if (!gameCharacteristic || commandCooldown) return;
             commandCooldown = true;
-            setTimeout(() => { commandCooldown = false; }, 100); // 縮短冷卻以提高反應速度
+            setTimeout(() => { commandCooldown = false; }, 100);
 
             try {
                 let data = (value !== null) ? new Uint8Array([command, value]) : new Uint8Array([command]);
@@ -207,7 +208,7 @@
 
         elements.buttons.selectTetris.addEventListener('click', () => selectGame(GAMES.TETRIS));
         elements.buttons.selectSnake.addEventListener('click', () => selectGame(GAMES.SNAKE));
-        elements.buttons.selectDino.addEventListener('click', () => selectGame(GAMES.DINO)); // <<< [新增] 綁定事件
+        elements.buttons.selectDino.addEventListener('click', () => selectGame(GAMES.DINO));
         
         function selectGame(gameId) {
             sendCommand(COMMANDS.SELECT_GAME, gameId);
@@ -238,19 +239,23 @@
                 elements.buttons.x.title = "加速下降 (X)";
                 elements.buttons.x.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); });
             } else if (gameId === GAMES.SNAKE) {
+                // <<< [程式碼修正] 以下是修正的部分
                 elements.dPad.style.display = 'block';
                 elements.pauseBtn.style.display = 'block';
-                elements.returnBtn.style.display = 'none'; // 貪吃蛇B鍵返回，不顯示獨立返回鍵
-                elements.actionButtons.innerHTML = ''; // 清空action區
-                elements.actionButtons.style.display = 'block';
-            } else if (gameId === GAMES.DINO) { // <<< [新增] 小恐龍遊戲的UI設定
-                elements.dPad.style.display = 'block'; // D-Pad的UP也可以跳
+                elements.returnBtn.style.display = 'block'; // 讓返回鍵顯示
+                elements.actionButtons.style.display = 'block'; // 確保動作按鈕區顯示
+                elements.buttons.b.title = "返回選單/重新開始 (B)"; // 更新B按鈕提示
+                elements.buttons.a.style.display = 'none'; // 隱藏用不到的按鈕
+                elements.buttons.x.style.display = 'none';
+                elements.buttons.y.style.display = 'none';
+            } else if (gameId === GAMES.DINO) {
+                elements.dPad.style.display = 'block';
                 elements.actionButtons.style.display = 'block';
                 elements.pauseBtn.style.display = 'block';
                 elements.returnBtn.style.display = 'block';
                 elements.buttons.a.title = "跳躍 (A/Space)";
                 elements.buttons.b.title = "重新開始 (B)";
-                elements.buttons.x.style.display = 'none'; // 隱藏用不到的按鈕
+                elements.buttons.x.style.display = 'none';
                 elements.buttons.y.style.display = 'none';
             }
         }
