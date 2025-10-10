@@ -16,9 +16,43 @@
             user-select: none; -webkit-tap-highlight-color: transparent;
         }
         .main-container { width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .info-panel { text-align: center; margin-bottom: 2rem; min-height: 3em; }
+        .info-panel { text-align: center; margin-bottom: 2rem; min-height: 5em; }
         h1 { margin: 0 0 0.5rem 0; font-weight: 300; }
         #status { font-size: 1em; color: #bdbdbd; }
+        /* <<< [新增] 音量控制的 CSS 樣式 --- START */
+        #volume-control {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1rem;
+            color: #ccc;
+        }
+        #volume-slider {
+            -webkit-appearance: none;
+            width: 150px;
+            height: 8px;
+            background: #555;
+            outline: none;
+            border-radius: 4px;
+            margin: 0 10px;
+        }
+        #volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--blue);
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        #volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--blue);
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        /* <<< [新增] 音量控制的 CSS 樣式 --- END */
         .gamepad-body {
             display: flex;
             justify-content: space-between; align-items: center; width: 90vw; max-width: 600px;
@@ -83,7 +117,13 @@
                 <span style="margin: 0 10px;">行數: <b id="lines">0</b></span>
             </div>
             <p id="status">請點擊「連線」按鈕開始</p>
-        </div>
+
+            <div id="volume-control">
+                <span>🔈</span>
+                <input type="range" id="volume-slider" min="0" max="30" value="25">
+                <span>🔊</span>
+            </div>
+            </div>
 
         <div id="game-selection">
             <h2>選擇一個遊戲</h2>
@@ -127,6 +167,9 @@
             scoreDisplay: document.getElementById('score'),
             levelDisplay: document.getElementById('level'),
             linesDisplay: document.getElementById('lines'),
+            // <<< [新增] 獲取音量控制相關元素
+            volumeControl: document.getElementById('volume-control'),
+            volumeSlider: document.getElementById('volume-slider'),
             buttons: {
                 up: document.getElementById('btn-up'), down: document.getElementById('btn-down'),
                 left: document.getElementById('btn-left'), right: document.getElementById('btn-right'),
@@ -147,6 +190,7 @@
         const COMMANDS = {
             LEFT: 0x01, RIGHT: 0x02, UP: 0x03, DOWN: 0x04,
             ACTION_A: 0x05, ACTION_B: 0x06, PAUSE: 0x07,
+            SET_VOLUME: 0x08, // <<< [新增] 新增音量指令
             RETURN_MENU: 0x0F,
             SELECT_GAME: 0x10
         };
@@ -174,6 +218,8 @@
                 elements.connectBtn.style.display = 'none';
                 elements.gamepadBody.style.display = 'none';
                 elements.gameSelection.style.display = 'flex';
+                // <<< [新增] 連線成功後顯示音量控制器
+                elements.volumeControl.style.display = 'flex';
             } catch (error) {
                 elements.status.textContent = `❌ 連線失敗: ${error.message.split(' GATTSERVER:')[0]}`;
                 console.error(error);
@@ -190,10 +236,15 @@
             elements.pauseBtn.style.display = 'none';
             elements.returnBtn.style.display = 'none';
             elements.scoreBoard.style.display = 'none';
+            // <<< [新增] 斷線後隱藏音量控制器
+            elements.volumeControl.style.display = 'none';
         }
         
         async function sendCommand(command, value = null) {
-            if (!gameCharacteristic || commandCooldown) return;
+            if (!gameCharacteristic) return;
+            // 對於非移動指令，可以放寬冷卻時間
+            if (command > COMMANDS.DOWN && commandCooldown) return;
+
             commandCooldown = true;
             setTimeout(() => { commandCooldown = false; }, 100);
 
@@ -205,6 +256,19 @@
                 commandCooldown = false;
             }
         }
+
+        // <<< [新增] 監聽滑桿的 input 事件，並發送指令
+        elements.volumeSlider.addEventListener('input', (event) => {
+            const volume = parseInt(event.target.value, 10);
+            // 為了不讓滑桿拖動時指令過於頻繁，這裡不使用 sendCommand 裡的冷卻
+            if (!gameCharacteristic) return;
+            try {
+                let data = new Uint8Array([COMMANDS.SET_VOLUME, volume]);
+                gameCharacteristic.writeValueWithoutResponse(data);
+            } catch(error) {
+                console.error('音量指令發送失敗:', error);
+            }
+        });
 
         elements.buttons.selectTetris.addEventListener('click', () => selectGame(GAMES.TETRIS));
         elements.buttons.selectSnake.addEventListener('click', () => selectGame(GAMES.SNAKE));
@@ -239,13 +303,12 @@
                 elements.buttons.x.title = "加速下降 (X)";
                 elements.buttons.x.addEventListener('pointerdown', e => { e.preventDefault(); sendCommand(COMMANDS.DOWN); });
             } else if (gameId === GAMES.SNAKE) {
-                // <<< [程式碼修正] 以下是修正的部分
                 elements.dPad.style.display = 'block';
                 elements.pauseBtn.style.display = 'block';
-                elements.returnBtn.style.display = 'block'; // 讓返回鍵顯示
-                elements.actionButtons.style.display = 'block'; // 確保動作按鈕區顯示
-                elements.buttons.b.title = "返回選單/重新開始 (B)"; // 更新B按鈕提示
-                elements.buttons.a.style.display = 'none'; // 隱藏用不到的按鈕
+                elements.returnBtn.style.display = 'block';
+                elements.actionButtons.style.display = 'block';
+                elements.buttons.b.title = "返回選單/重新開始 (B)";
+                elements.buttons.a.style.display = 'none';
                 elements.buttons.x.style.display = 'none';
                 elements.buttons.y.style.display = 'none';
             } else if (gameId === GAMES.DINO) {
