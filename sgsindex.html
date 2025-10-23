@@ -3,23 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGS-CNS15730</title>
+    <title>我的報告</title>
     
-<style>
+    <style>
         /* 保持 body 的垂直置中設定 */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;              /* 頁面周圍留點空間 */
+            padding: 20px;
             background-color: #f4f4f4;
-            
-            /* Flexbox 佈局設定 (讓整個內容塊垂直置中) */
             display: flex;
             flex-direction: column;
-            justify-content: center;    /* 垂直置中 */
-            align-items: center;        /* 水平置中 */
+            justify-content: center;
+            align-items: center;
             min-height: 100vh;
             box-sizing: border-box;
+        }
+
+        /* 【新增】切換按鈕的樣式 */
+        .toggle-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px; /* 和下方標題隔開 */
+            transition: background-color 0.3s;
+        }
+
+        .toggle-button:hover {
+            background-color: #0056b3;
         }
 
         h1 {
@@ -28,54 +44,87 @@
             width: 100%;
         }
 
-        /* 【修改重點: 圖片容器改為 Flex 垂直排列】 */
+        /* 圖片容器的通用樣式 (垂直排列) */
         .gallery-container {
-            display: flex;
-            flex-direction: column;  /* 關鍵：設定主軸為垂直方向，圖片就會堆疊 */
-            align-items: center;     /* 讓圖片在容器內水平置中 */
-            gap: 20px;               /* 圖片之間的「垂直」間距 */
-            
-            width: 100%;             /* 容器寬度佔滿可用空間 */
-            
-            /* 設定一個最大寬度，這樣在大螢幕上，
-              圖片才不會被拉得太寬，看起來比較舒服。
-              你可以隨意調整 600px 這個值。
-            */
+            display: flex;           /* 預設是 flex，這樣 JS 切換時才正確 */
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
             max-width: 600px;
         }
+        
+        /* 【修改】預設隱藏英文報告 */
+        #gallery-en {
+            display: none; /* 關鍵：預設不顯示 */
+        }
 
-        /* 【圖片樣式】 */
+        /* 圖片的通用樣式 */
         .gallery-container img {
-            /* 寬度 100% 會填滿父容器 (.gallery-container) 的寬度
-              因為 .gallery-container 有 max-width: 600px，
-              所以圖片最寬也就是 600px (在手機上會自動縮小)。
-            */
             width: 100%;
-            height: auto;         /* 高度自動，保持原始比例 */
-            
+            height: auto;
             border: 3px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            box-sizing: border-box; /* 讓邊框和內距不會撐大圖片 */
+            box-sizing: border-box;
         }
     </style>
 </head>
 <body>
 
-    <h1>捷綠木SGS檢測報告</h1>
+    <button id="toggleButton" class="toggle-button" onclick="toggleReport()">
+        English Report!
+    </button>
 
-    <div class="gallery-container">
-        
-        <img src="img/sgs1.jpg" alt="SGS檢測報告page1">
-        
-        <img src="img/sgs2.jpg" alt="SGS檢測報告page2">
-        
-        <img src="img/sgs3.jpg" alt="SGS檢測報告page3">
-        
-        <img src="img/sgs4.jpg" alt="SGS檢測報告page4">
+    <h1 id="pageTitle">捷綠木SGS檢測報告</h1>
 
+    <div id="gallery-zh" class="gallery-container">
+        <img src="img/sgs1.jpg" alt="SGS中文報告書1">
+        <img src="img/sgs2.jpg" alt="SGS中文報告書2">
+        <img src="img/sgs3.jpg" alt="SGS中文報告書3">
+        <img src="img/sgs4.jpg" alt="SGS中文報告書4">
     </div>
 
-</body>
+    <div id="gallery-en" class="gallery-container">
+        <img src="img/ensgs1.jpg" alt="SGS English Report-Page1">
+        <img src="img/ensgs2.jpg" alt="SGS English Report-Page2">
+        <img src="img/ensgs3.jpg" alt="SGS English Report-Page3">
+    </div>
 
+
+    <script>
+        // 宣告一個函式 (function) 叫做 toggleReport
+        function toggleReport() {
+            
+            // 1. 透過 id 找到 HTML 元素
+            var zhGallery = document.getElementById("gallery-zh");
+            var enGallery = document.getElementById("gallery-en");
+            var title = document.getElementById("pageTitle");
+            var button = document.getElementById("toggleButton");
+
+            // 2. 檢查「英文報告」目前是否為隱藏狀態
+            if (enGallery.style.display === "none" || enGallery.style.display === "") {
+                
+                // 如果是隱藏的 -> 就顯示英文報告，並隱藏中文報告
+                enGallery.style.display = "flex"; // 顯示 (使用 'flex' 因為 CSS 是這樣設定的)
+                zhGallery.style.display = "none"; // 隱藏
+                
+                // 順便更新標題和按鈕的文字
+                title.innerText = "SGS English Report";
+                button.innerText = "切換中文報告";
+
+            } else {
+                
+                // 如果是顯示的 -> 就隱藏英文報告，並顯示中文報告
+                enGallery.style.display = "none";
+                zhGallery.style.display = "flex";
+                
+                // 更新文字
+                title.innerText = "捷綠木SGS檢測報告";
+                button.innerText = "English Report!";
+            }
+        }
+    </script>
+
+</body>
 </html>
