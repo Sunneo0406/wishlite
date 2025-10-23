@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGS-CNS15730</title>
+    
+<style>
+        /* 保持 body 的垂直置中設定 */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;              /* 頁面周圍留點空間 */
+            background-color: #f4f4f4;
+            
+            /* Flexbox 佈局設定 (讓整個內容塊垂直置中) */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;    /* 垂直置中 */
+            align-items: center;        /* 水平置中 */
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* 【修改重點: 圖片容器改為 Flex 垂直排列】 */
+        .gallery-container {
+            display: flex;
+            flex-direction: column;  /* 關鍵：設定主軸為垂直方向，圖片就會堆疊 */
+            align-items: center;     /* 讓圖片在容器內水平置中 */
+            gap: 20px;               /* 圖片之間的「垂直」間距 */
+            
+            width: 100%;             /* 容器寬度佔滿可用空間 */
+            
+            /* 設定一個最大寬度，這樣在大螢幕上，
+              圖片才不會被拉得太寬，看起來比較舒服。
+              你可以隨意調整 600px 這個值。
+            */
+            max-width: 600px;
+        }
+
+        /* 【圖片樣式】 */
+        .gallery-container img {
+            /* 寬度 100% 會填滿父容器 (.gallery-container) 的寬度
+              因為 .gallery-container 有 max-width: 600px，
+              所以圖片最寬也就是 600px (在手機上會自動縮小)。
+            */
+            width: 100%;
+            height: auto;         /* 高度自動，保持原始比例 */
+            
+            border: 3px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box; /* 讓邊框和內距不會撐大圖片 */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>捷綠盟SGS檢測報告</h1>
+
+    <div class="gallery-container">
+        
+        <img src="img/sgs1.jpg" alt="SGS檢測報告page1">
+        
+        <img src="img/sgs2.jpg" alt="SGS檢測報告page2">
+        
+        <img src="img/sgs3.jpg" alt="SGS檢測報告page3">
+        
+        <img src="img/sgs4.jpg" alt="SGS檢測報告page4">
+
+    </div>
+
+</body>
+</html>
