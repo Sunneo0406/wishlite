@@ -31,18 +31,18 @@
         }
         h1 { margin: 0 0 0.5rem 0; font-weight: 300; }
         #status { font-size: 1em; color: #bdbdbd; }
-        #volume-control {
+        #volume-control, #brightness-control {
             display: none; align-items: center; justify-content: center; margin-top: 1rem; color: #ccc;
         }
-        #volume-slider {
+        #volume-slider, #brightness-slider {
             -webkit-appearance: none; width: 150px; height: 8px; background: #555;
             outline: none; border-radius: 4px; margin: 0 10px;
         }
-        #volume-slider::-webkit-slider-thumb {
+        #volume-slider::-webkit-slider-thumb, #brightness-slider::-webkit-slider-thumb {
             -webkit-appearance: none; appearance: none; width: 20px; height: 20px;
             background: var(--blue); cursor: pointer; border-radius: 50%;
         }
-        #volume-slider::-moz-range-thumb {
+        #volume-slider::-moz-range-thumb, #brightness-slider::-moz-range-thumb {
             width: 20px; height: 20px; background: var(--blue); cursor: pointer; border-radius: 50%;
         }
         /* <<< [修改] 主要修改區域，使用變數和 vmin */
