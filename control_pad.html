@@ -208,6 +208,8 @@
             linesDisplay: document.getElementById('lines'),
             volumeControl: document.getElementById('volume-control'),
             volumeSlider: document.getElementById('volume-slider'),
+            brightnessControl: document.getElementById('brightness-control'),
+            brightnessSlider: document.getElementById('brightness-slider'),
             buttons: {
                 up: document.getElementById('btn-up'), down: document.getElementById('btn-down'),
                 left: document.getElementById('btn-left'), right: document.getElementById('btn-right'),
@@ -229,6 +231,7 @@
             LEFT: 0x01, RIGHT: 0x02, UP: 0x03, DOWN: 0x04,
             ACTION_A: 0x05, ACTION_B: 0x06, PAUSE: 0x07,
             SET_VOLUME: 0x08,
+            SET_BRIGHTNESS: 0x09,
             RETURN_MENU: 0x0F,
             SELECT_GAME: 0x10
         };
@@ -257,6 +260,7 @@
                 elements.gamepadBody.style.display = 'none';
                 elements.gameSelection.style.display = 'flex';
                 elements.volumeControl.style.display = 'flex';
+                elements.brightnessControl.style.display = 'flex';
             } catch (error) {
                 elements.status.textContent = `❌ 連線失敗: ${error.message.split(' GATTSERVER:')[0]}`;
                 console.error(error);
@@ -274,6 +278,7 @@
             elements.returnBtn.style.display = 'none';
             elements.scoreBoard.style.display = 'none';
             elements.volumeControl.style.display = 'none';
+            elements.brightnessControl.style.display = 'none';
         }
         
         async function sendCommand(command, value = null) {
@@ -300,6 +305,17 @@
                 gameCharacteristic.writeValueWithoutResponse(data);
             } catch(error) {
                 console.error('音量指令發送失敗:', error);
+            }
+        });
+        elements.brightnessSlider.addEventListener('input', (event) => {
+            const brightness = parseInt(event.target.value, 10);
+            if (!gameCharacteristic) return;
+            try {
+                // 使用新的指令代碼 0x09
+                let data = new Uint8Array([COMMANDS.SET_BRIGHTNESS, brightness]);
+                gameCharacteristic.writeValueWithoutResponse(data);
+            } catch(error) {
+                console.error('亮度指令發送失敗:', error);
             }
         });
 
