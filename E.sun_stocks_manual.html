@@ -1,214 +1,71 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" data-color-mode="dark" data-dark-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <title>S1 智能交易系統運營手冊</title>
+    <meta charset="utf-8">
+    <title>S1 自動交易系統 - 軟體使用手冊</title>
+    <link crossorigin="anonymous" media="all" rel="stylesheet" href="https://github.githubassets.com/assets/light-dac525bbd821.css" />
+    <link crossorigin="anonymous" media="all" rel="stylesheet" href="https://github.githubassets.com/assets/dark-784387e86ac0.css" />
     <style>
-        :root {
-            --bg-color: #1a1a1a;
-            --card-bg: #2d2d2d;
-            --accent-color: #008900;
-            --line-color: #06C755;
-            --text-main: #e0e0e0;
-            --text-dim: #b0b0b0;
-            --border-color: #404040;
-            --warning-color: #D32F2F;
-            --info-color: #00bcd4;
-        }
-        body {
-            font-family: "Microsoft JhengHei", sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        .container { max-width: 1000px; margin: 0 auto; }
-        h1 { color: var(--accent-color); border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; text-align: center; }
-        h2 { color: var(--info-color); margin-top: 40px; border-left: 5px solid var(--info-color); padding-left: 15px; }
-        
-        /* 系統介面展示區 */
-        .interface-display {
-            width: 100%;
-            background-color: #000;
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 30px;
-            text-align: center;
-            box-sizing: border-box;
-        }
-        .interface-display img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 4px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-        .img-label { color: var(--text-dim); font-size: 0.9em; margin-top: 12px; font-weight: bold; }
-
-        .section {
-            background-color: var(--card-bg);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        .risk-section { border: 1px solid var(--warning-color); border-left: 5px solid var(--warning-color); }
-        
-        /* 功能模組樣式 */
-        .module-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .module-card {
-            background-color: #383838;
-            padding: 15px;
-            border-radius: 6px;
-            border-top: 3px solid var(--accent-color);
-        }
-        .module-card h3 { color: #ffb300; margin-top: 0; font-size: 1.1em; }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        th, td {
-            border: 1px solid var(--border-color);
-            padding: 12px;
-            text-align: left;
-        }
-        th { background-color: #333; color: var(--info-color); }
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; background-color: #455A64; color: white; font-family: Consolas, monospace; }
-
-        /* LINE 區塊 */
-        .line-cta {
-            background-color: #262626;
-            border: 2px solid var(--line-color);
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-            margin-top: 50px;
-        }
-        .line-btn {
-            display: inline-flex;
-            align-items: center;
-            background-color: var(--line-color);
-            color: white;
-            padding: 14px 40px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-size: 1.2em;
-            font-weight: bold;
-            transition: transform 0.2s;
-        }
-        .line-btn:hover { transform: scale(1.05); }
-
-        .footer-note {
-            text-align: center;
-            color: #555;
-            font-size: 0.85em;
-            margin-top: 50px;
-            padding-bottom: 20px;
-        }
+        body { background-color: #0d1117; color: #c9d1d9; }
+        .markdown-body { padding: 45px; max-width: 1012px; margin: 0 auto; background-color: #0d1117; }
+        .gui-photo-box { text-align: center; margin: 25px 0; border: 1px solid #30363d; border-radius: 8px; padding: 15px; background: #161b22; }
+        .feature-card { background-color: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 8px; margin: 15px 0; }
+        .new-label { background-color: #f2994a; color: #000; padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-left: 5px; font-weight: bold; }
+        .admin-note { border-left: 4px solid #f85149; background: rgba(248, 81, 73, 0.1); padding: 15px; margin: 20px 0; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>S1 智能交易系統運營手冊 v5.4</h1>
+<div class="markdown-body">
+    <h1>S1 自動化交易決策系統 <small style="color: #8b949e;">v5.8 Pro</small></h1>
 
-    <div class="interface-display">
-        <img src="img/2.jpg" alt="S1 授權版系統介面">
-        <div class="img-label">S1 智能交易終端 - 授權管理與監控介面 (授權版)</div>
-    </div>
-
-    <div class="section risk-section">
-        <h3 style="color: var(--warning-color); margin-top: 0;">⚠️ 交易風險預告與免責聲明</h3>
-        <p style="font-size: 0.92em; color: var(--text-dim);">
-            1. <strong>市場風險：</strong> 金融市場具高度波動性，本系統過往紀錄不代表未來獲利保證。 <br>
-            2. <strong>系統風險：</strong> 自動交易依賴網路與 API 活性，若因硬體、連線延遲或行情服務異常導致執行誤差，開發者不負損害賠償責任。 <br>
-            3. <strong>工具性質：</strong> 本系統定位為「量化執行工具」而非投顧建議，使用者應自行評估標的與承擔投資決策責任。
-        </p>
-    </div>
-    <h2>一、 系統環境與準備工作 (Prerequisites)</h2>
-    <div class="section">
-        <ul>
-            <li><strong>硬體環境：</strong> 具備穩定電源之電腦設備，建議作業系統為 <strong>Windows 11</strong> 以符合硬體 UUID 識別邏輯。</li>
-            <li><strong>帳戶權限：</strong> 須完成玉山證券 API 憑證申請，並確認帳戶具備<strong>現股當沖</strong>交易權限(若無開啟權限也可使用，但虧損自負)。</li>
-            <li><strong>數據來源：</strong> 須持有有效的 <strong>FinMind Token</strong>，用於啟動全市場動能掃描引擎。<a href="https://finmindtrade.com/" target="_blank" style="color: #ffb300; text-decoration: none; font-weight: bold;">Finmind官網👈</a></li>
-            <li><strong>路徑配置：</strong> 須確保系統能於 <code>C:\esun\</code> 目錄下執行讀寫，以保存自動化帳本與執行日誌。</li>
-            <li><strong>網路要求：</strong> 須維持低延遲網路環境，以確保系統 10 秒一輪的即時監控機制不中斷。</li>
-        </ul>
-    </div>
-    <h2>二、 智能終端功能模組介紹 (GUI Features)</h2>
-    <div class="section">
-        <div class="module-grid">
-            <div class="module-card">
-                <h3>🔒 安全授權中心</h3>
-                <p>具備硬體 UUID 唯一識別技術，使用者需配合專屬 Hash 金鑰進行線上校驗，確保帳號僅能在授權設備上穩定運作。</p>
-            </div>
-            <div class="module-card">
-                <h3>⚙️ 風控參數控制台</h3>
-                <p>即時調整「資本配額」、「價格過濾」與「流動性閥值」。所有參數支援動態儲存，確保交易指令始終符合當前盤勢。</p>
-            </div>
-            <div class="module-card">
-                <h3>🛡️ 分層防御開關</h3>
-                <p>整合「隱身防狙擊」與「當沖紅線保護」。啟動後系統將切換至去識別化模式，並建立基於均價線與波幅的雙重防护網。</p>
-            </div>
-            <div class="module-card">
-                <h3>📊 帳務與報表中心</h3>
-                <p>提供實時庫存查詢、委託回報、當日成交明細及歷史損益分析功能。支援日誌自動化異地備份與數據鑑識。</p>
-            </div>
-            <div class="module-card">
-                <h3>🛰️ 即時動態報價牆</h3>
-                <p>監控核心以 10 秒為週期進行數據同步，對持股進行毫秒級的價格跟蹤與條件判斷。</p>
-            </div>
-            <div class="module-card">
-                <h3>🤖 自動排程引擎</h3>
-                <p>內建背景排程器，涵蓋早盤觀測、盤中執行、尾盤搶進與自動補單等多階段全自動流程。</p>
-            </div>
-        </div>
+    <div class="gui-photo-box">
+        <p style="color: #8b949e; font-size: 13px;">[ 系統主視窗功能全覽 ]</p>
+        <img src="gui_main_ui.png" alt="S1 軟體介面" style="max-width: 100%; border-radius: 5px;">
     </div>
 
-    <h2>三、 隱身模式執行狀態編碼表 (Stealth Codes)</h2>
-    <div class="section">
-        <p>為保護操作隱私與商業機密，系統於「隱身防狙擊」模式下將採用以下編碼記錄執行過程：</p>
-        <table>
-            <tr><th width="150px">編碼代號</th><th>動作說明</th><th>觸發情境簡述</th></tr>
-            <tr><td><span class="badge">L-001</span></td><td>標的發現</td><td>掃描器捕捉到符合原始攻擊動能區間之標的</td></tr>
-            <tr><td><span class="badge">EXE-B</span></td><td>指令執行</td><td>觸發資本配額買進下單 (包含系統隨機延遲機制)</td></tr>
-            <tr><td><span class="badge">SIG-P01</span></td><td>獲利了結</td><td>標的達到預設核心盈餘目標，執行平倉鎖利</td></tr>
-            <tr><td><span class="badge">SIG-P02</span></td><td>動態鎖利</td><td>偵測價格自局部高點回落達警戒深度，強制出場</td></tr>
-            <tr><td><span class="badge">SIG-T99</span></td><td>效率清理</td><td>針對波動力趨於停滯標的進行清理，釋放資金動能</td></tr>
-            <tr><td><span class="badge">SIG-L01</span></td><td>紅線止損</td><td>觸發極限硬停損或價格破開盤線之防御機制</td></tr>
-            <tr><td><span class="badge">FLTR-H</span></td><td>過熱過濾</td><td>標的短線波幅已達預設熱度上限，自動放棄追價</td></tr>
-            <tr><td><span class="badge">FLTR-V</span></td><td>深度過濾</td><td>五檔掛單厚度不足，為避免滑價損耗自動過濾</td></tr>
-            <tr><td><span class="badge">FLTR-R</span></td><td>真實驗證</td><td>透過二次校驗機制排除系統誤判之假性信號</td></tr>
-        </table>
+    <p>本系統是專為強勢股交易者設計的決策輔助工具，整合了即時監控、動能偵測與自動化風險管理，協助使用者在市場波動中保持高度紀律。</p>
+
+    <h2>一、 即時監控儀表板</h2>
+    <p>主畫面提供直覺的數據回饋，讓您隨時掌握目前的交易資產狀態：</p>
+    <ul>
+        <li><strong>本金資產監控</strong>：即時更新目前系統配置的可用本金。</li>
+        <li><strong>剩餘可交易額度 <span class="new-label">NEW</span></strong>：
+            自動根據市場規則計算剩餘委託額度。當額度趨近上限時，系統會以顯眼的紅色進行提醒，防止重複超支。</li>
+        <li><strong>智慧數據同步器</strong>：
+            提供一鍵校對功能，能隨時向伺服器同步最新的買賣紀錄，並自動過濾冗餘資料，確保帳目清晰精確。</li>
+    </ul>
+
+    <h2>二、 策略行為自定義</h2>
+    <p>透過圖形化介面，您可以根據盤勢彈性調整系統的運作方式：</p>
+    <div class="feature-card">
+        <strong>1. 額度利用安全乘數 <span class="new-label">NEW</span></strong><br>
+        使用者可設定交易預算的保留比例。此功能能有效平衡「資金利用率」與「應急止損空間」，確保在高頻環境下依然具備出場能力。
+    </div>
+    <div class="feature-card">
+        <strong>2. 波動緩衝保護機制 <span class="new-label">NEW</span></strong><br>
+        針對瞬息萬變的市場，提供額外的價格容忍緩衝，防止因極短時間的洗盤震盪而導致被動出場。
+    </div>
+    <div class="feature-card">
+        <strong>3. 自定義波段掃描時段</strong><br>
+        可靈活指派系統啟動動能偵測的時間點，完美避開早盤混亂期或午後疲軟期。
     </div>
 
-    <h2>四、 分層防御策略核心簡述</h2>
-    <div class="section">
-        <ul>
-            <li><strong>動態訊號鎖定：</strong> 系統嚴格鎖定具備強大成交規模之標的，確保標的具備足夠進出場深度。</li>
-            <li><strong>VWAP 即時風控：</strong> 結合成交均價線與帳面波幅進行雙重止損判定，有效規避隨機震盪誤觸。</li>
-            <li><strong>本金自動校正：</strong> 具備每日多維度對帳邏輯，自動歸還未成交之預扣資本至主帳本。</li>
-        </ul>
+    <h2>三、 進階運作邏輯</h2>
+    <ul>
+        <li><strong>自動恢復機制</strong>：即使系統意外中斷，重啟後會自動銜接當日已成交之標的，無需手動補錄。</li>
+        <li><strong>資料唯一性保護</strong>：內建高效能比對引擎，不論同步幾次，交易清單皆能保持精確不重複。</li>
+        <li><strong>操作隱身模式</strong>：提供日誌模糊化處理，在不影響系統運作的前提下，保護您的操作細節。</li>
+    </ul>
+
+    <div class="admin-note">
+        <strong>💡 實務操作關鍵提醒：</strong><br>
+        請注意市場機制：不論是「買入」或是「賣出」昨日庫存，皆會消耗當日的總委託額度。當剩餘額度不足時，系統將採取安全防禦策略，暫緩後續的新委託下達。
     </div>
 
-    <div class="line-cta">
-        <p>想獲取專屬授權金鑰或了解更多系統操作詳情嗎？</p>
-        <a href="https://line.me/R/ti/p/@您的ID" class="line-btn" target="_blank">
-            立即加入官方帳號諮詢
-        </a>
-    </div>
-
-    <div class="footer-note">
-        © 2026 S1 Trading Terminal. Confidential Proprietary Documents.
-    </div>
+    <p style="text-align: center; color: #8b949e; margin-top: 50px; font-size: 12px; border-top: 1px solid #30363d; padding-top: 20px;">
+        &copy; 2026 S1 Trader Pro - 專業級決策輔助系統
+    </p>
 </div>
 
 </body>
